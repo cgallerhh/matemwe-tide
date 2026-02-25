@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Matemwe Tide</title>
+  <meta name="theme-color" content="#0a2540">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Matemwe Tide">
+  <link rel="manifest" href="manifest.json">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --deep: #071e34;
+      --ocean: #0a3d6b;
+      --mid: #0e6b9b;
+      --light: #1ab3c8;
+      --turquoise: #22d3c0;
+      --sand: #e8c07d;
+      --sand-light: #f5e0b0;
+      --white: #f0f9ff;
+      --rising: #34d39a;
+      --falling: #f4845f;
+      --card-bg: rgba(255,255,255,0.07);
+      --card-border: rgba(255,255,255,0.13);
+    }
+
+    html, body {
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--deep);
+      color: var(--white);
+      overflow-x: hidden;
+    }
+
+    /* ── Background ── */
+    .sky {
+      position: fixed; inset: 0; z-index: 0;
+      background: linear-gradient(
+        180deg,
+        #071e34 0%,
+        #0a3660 35%,
+        #0e6b9b 65%,
+        #1ab3c8 85%,
+        #22d3c0 100%
+      );
+    }
+
+    /* ── Stars ── */
+    .stars {
+      position: fixed; top: 0; left: 0; right: 0; height: 40vh; z-index: 1; pointer-events: none;
+    }
+    .star {
+      position: absolute; background: white; border-radius: 50%;
+      animation: twinkle var(--d, 3s) ease-in-out infinite;
+    }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.2; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.3); }
+    }
+
+    /* ── Palm silhouette ── */
+    .palms {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 2; pointer-events: none;
+      height: 200px;
+    }
+
+    /* ── Animated ocean waves ── */
+    .waves-container {
+      position: fixed; bottom: 0; left: 0; right: 0; z-index: 3;
+      height: 120px; pointer-events: none; overflow: hidden;
+    }
+    .wave {
+      position: absolute; bottom: 0; left: -100%; right: -100%;
+      height: 80px;
+      border-radius: 45%;
+      animation: wave var(--speed, 8s) linear infinite;
+    }
+    .wave-1 { background: rgba(34,211,192,0.25); --speed: 7s; }
+    .wave-2 { background: rgba(26,179,200,0.2); --speed: 9s; animation-delay: -2s; }
+    .wave-3 { background: rgba(14,107,155,0.15); --speed: 11s; animation-delay: -4s; }
+    @keyframes wave {
+      0% { transform: translateX(0) rotate(0deg); }
+      100% { transform: translateX(50%) rotate(360deg); }
+    }
+
+    /* ── App container ── */
+    .app {
+      position: relative; z-index: 10;
+      min-height: 100vh;
+      padding: 0 0 120px;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      padding: 48px 24px 16px;
+    }
+    .location-tag {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 12px;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--sand-light);
+      margin-bottom: 12px;
+    }
+    .location-tag::before { content: '📍'; }
+    header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: white;
+    }
+    header .subtitle {
+      font-size: 13px;
+      color: rgba(255,255,255,0.5);
+      margin-top: 4px;
+    }
+    #clock {
+      font-size: 14px;
+      color: var(--sand-light);
+      margin-top: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* ── Main tide card ── */
+    .tide-hero {
+      margin: 16px 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 28px 24px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .tide-status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .tide-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,0.5);
+    }
+    .tide-name {
+      font-size: 36px;
+      font-weight: 800;
+      line-height: 1;
+      margin-top: 4px;
+    }
+    .tide-name.rising { color: var(--rising); }
+    .tide-name.falling { color: var(--falling); }
+
+    .tide-height-display {
+      text-align: right;
+    }
+    .tide-height-num {
+      font-size: 48px;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      color: white;
+    }
+    .tide-height-unit {
+      font-size: 16px;
+      color: rgba(255,255,255,0.5);
+      font-weight: 400;
+    }
+
+    /* ── Mini wave canvas ── */
+    .mini-wave-wrap {
+      margin: 14px 0 6px;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    #miniWave {
+      width: 100%;
+      display: block;
+    }
+    .wave-labels {
+      display: flex; justify-content: space-between;
+      font-size: 10px; color: rgba(255,255,255,0.28);
+      margin-top: 3px; padding: 0 2px;
+    }
+
+    /* ── Trend arrow ── */
+    .trend-indicator {
+      display: flex; align-items: center; gap: 8px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.6);
+    }
+    .trend-arrow {
+      font-size: 18px;
+      transition: transform 0.3s;
+    }
+    .trend-arrow.rising { color: var(--rising); }
+    .trend-arrow.falling { color: var(--falling); }
+
+    /* ── Next tides ── */
+    .next-tides {
+      margin: 0 20px 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .next-tile {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .next-tile-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 8px;
+    }
+    .next-tile-type {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    .next-tile-type.hw { color: var(--rising); }
+    .next-tile-type.lw { color: var(--falling); }
+    .next-tile-time { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+    .next-tile-height { font-size: 13px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .next-tile-countdown {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      margin-top: 6px;
+    }
+
+    /* ── Chart section ── */
+    .chart-card {
+      margin: 0 20px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .section-title {
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 16px;
+    }
+    .chart-wrap { position: relative; height: 160px; }
+
+    /* ── Today's table ── */
+    .table-card {
+      margin: 0 20px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .tide-row {
+      display: flex;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .tide-row:last-child { border-bottom: none; }
+    .tide-row-icon { font-size: 20px; width: 32px; }
+    .tide-row-info { flex: 1; margin-left: 8px; }
+    .tide-row-type { font-size: 14px; font-weight: 600; }
+    .tide-row-type.hw { color: var(--rising); }
+    .tide-row-type.lw { color: var(--falling); }
+    .tide-row-time { font-size: 12px; color: rgba(255,255,255,0.45); }
+    .tide-row-height { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
+    .tide-row-bar {
+      width: 60px; height: 6px; background: rgba(255,255,255,0.1);
+      border-radius: 3px; overflow: hidden; margin-top: 4px;
+    }
+    .tide-row-bar-fill {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--mid), var(--turquoise));
+    }
+
+    /* ── Moon phase card ── */
+    .info-row {
+      margin: 0 20px 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .info-tile {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .info-tile-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,0.4);
+      margin-bottom: 6px;
+    }
+    .info-tile-value {
+      font-size: 28px;
+    }
+    .info-tile-text {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sand-light);
+      margin-top: 2px;
+    }
+    .info-tile-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.35);
+      margin-top: 2px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      text-align: center;
+      padding: 16px 24px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.2);
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Day selector ── */
+    .day-selector {
+      display: flex; gap: 8px;
+      margin: 0 20px 16px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+    }
+    .day-selector::-webkit-scrollbar { display: none; }
+    .day-btn {
+      flex-shrink: 0;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 14px;
+      padding: 10px 16px;
+      color: rgba(255,255,255,0.5);
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all 0.2s;
+      backdrop-filter: blur(12px);
+    }
+    .day-btn.active {
+      background: rgba(34,211,192,0.25);
+      border-color: var(--turquoise);
+      color: white;
+    }
+    .day-btn div:first-child { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
+    .day-btn div:last-child { font-size: 18px; font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<div class="sky"></div>
+<div class="stars" id="stars"></div>
+
+<!-- SVG Palms -->
+<svg class="palms" viewBox="0 0 420 200" preserveAspectRatio="xMidYMax meet" xmlns="http://www.w3.org/2000/svg">
+  <!-- Left palm -->
+  <g opacity="0.35">
+    <rect x="38" y="110" width="6" height="90" fill="#0a1f35" rx="3"/>
+    <ellipse cx="41" cy="115" rx="42" ry="8" fill="#0a1f35" transform="rotate(-15,41,115)"/>
+    <ellipse cx="41" cy="115" rx="40" ry="7" fill="#0a1f35" transform="rotate(10,41,115)"/>
+    <ellipse cx="41" cy="110" rx="38" ry="7" fill="#0a1f35" transform="rotate(35,41,110)"/>
+    <ellipse cx="41" cy="110" rx="35" ry="7" fill="#0a1f35" transform="rotate(-35,41,110)"/>
+    <ellipse cx="41" cy="112" rx="36" ry="7" fill="#0a1f35" transform="rotate(55,41,112)"/>
+    <ellipse cx="41" cy="112" rx="33" ry="7" fill="#0a1f35" transform="rotate(-55,41,112)"/>
+  </g>
+  <!-- Right palm -->
+  <g opacity="0.3">
+    <rect x="376" y="120" width="5" height="80" fill="#0a1f35" rx="3"/>
+    <ellipse cx="378" cy="124" rx="38" ry="7" fill="#0a1f35" transform="rotate(20,378,124)"/>
+    <ellipse cx="378" cy="124" rx="36" ry="7" fill="#0a1f35" transform="rotate(-10,378,124)"/>
+    <ellipse cx="378" cy="120" rx="34" ry="7" fill="#0a1f35" transform="rotate(40,378,120)"/>
+    <ellipse cx="378" cy="120" rx="32" ry="7" fill="#0a1f35" transform="rotate(-40,378,120)"/>
+  </g>
+</svg>
+
+<div class="waves-container">
+  <div class="wave wave-1"></div>
+  <div class="wave wave-2"></div>
+  <div class="wave wave-3"></div>
+</div>
+
+<div class="app">
+  <header>
+    <div class="location-tag">Matemwe · Zanzibar</div>
+    <h1>Ebbe &amp; Flut</h1>
+    <div id="clock">Laden…</div>
+  </header>
+
+  <!-- Main hero card -->
+  <div class="tide-hero">
+    <div class="tide-status-row">
+      <div>
+        <div class="tide-label">Aktuell</div>
+        <div class="tide-name" id="tide-name">—</div>
+      </div>
+      <div class="tide-height-display">
+        <div class="tide-label" style="text-align:right">Höhe</div>
+        <div>
+          <span class="tide-height-num" id="tide-height">—</span>
+          <span class="tide-height-unit"> m</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="mini-wave-wrap">
+      <canvas id="miniWave" height="72"></canvas>
+      <div class="wave-labels">
+        <span id="wl-4h">–4h</span>
+        <span id="wl-2h">–2h</span>
+        <span style="color:rgba(255,200,80,0.7)">Jetzt</span>
+        <span id="wl+2h">+2h</span>
+        <span id="wl+4h">+4h</span>
+        <span id="wl+8h">+8h</span>
+      </div>
+    </div>
+
+    <div class="trend-indicator">
+      <span class="trend-arrow" id="trend-arrow">→</span>
+      <span id="trend-text">Berechne…</span>
+    </div>
+  </div>
+
+  <!-- Next tides -->
+  <div class="next-tides">
+    <div class="next-tile">
+      <div class="next-tile-label">Nächste</div>
+      <div class="next-tile-type" id="next1-type">—</div>
+      <div class="next-tile-time" id="next1-time">—</div>
+      <div class="next-tile-height" id="next1-height">—</div>
+      <div class="next-tile-countdown" id="next1-countdown">—</div>
+    </div>
+    <div class="next-tile">
+      <div class="next-tile-label">Danach</div>
+      <div class="next-tile-type" id="next2-type">—</div>
+      <div class="next-tile-time" id="next2-time">—</div>
+      <div class="next-tile-height" id="next2-height">—</div>
+      <div class="next-tile-countdown" id="next2-countdown">—</div>
+    </div>
+  </div>
+
+  <!-- Day selector -->
+  <div class="day-selector" id="day-selector"></div>
+
+  <!-- Chart -->
+  <div class="chart-card">
+    <div class="section-title">Verlauf 48h</div>
+    <div class="chart-wrap">
+      <canvas id="tideChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Today's tides table -->
+  <div class="table-card">
+    <div class="section-title" id="table-title">Heute im Überblick</div>
+    <div id="tide-table"></div>
+  </div>
+
+  <!-- Info tiles -->
+  <div class="info-row">
+    <div class="info-tile">
+      <div class="info-tile-label">Mondphase</div>
+      <div class="info-tile-value" id="moon-icon">🌕</div>
+      <div class="info-tile-text" id="moon-name">—</div>
+      <div class="info-tile-sub" id="moon-sub">—</div>
+    </div>
+    <div class="info-tile">
+      <div class="info-tile-label">Tidenhub</div>
+      <div class="info-tile-value" id="range-icon">📏</div>
+      <div class="info-tile-text" id="range-value">—</div>
+      <div class="info-tile-sub" id="range-type">—</div>
+    </div>
+  </div>
+
+  <footer>
+    Harmonische Tidevorhersage · Matemwe, Sansibar · UTC+3<br>
+    Alle Zeiten in Ostafrika-Zeit (EAT) · ±30 min Abweichung möglich
+  </footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// TIDE PREDICTION ENGINE
+// Harmonic prediction for Zanzibar / Matemwe
+// ═══════════════════════════════════════════════════
+
+// Tidal constituents for Zanzibar
+// Speed: deg/hr | amp: meters | g: Greenwich phase lag (deg) | V0: argument at ref epoch
+const Z0 = 2.09; // MSL above chart datum (m)
+const CONSTITUENTS = [
+  { name:'M2', speed:28.9841042, amp:1.417, g:177.4, V0:136.5 },
+  { name:'S2', speed:30.0000000, amp:0.548, g:214.4, V0:  0.0 },
+  { name:'N2', speed:28.4397295, amp:0.255, g:157.1, V0:  8.1 },
+  { name:'K2', speed:30.0821373, amp:0.149, g:214.4, V0:200.0 },
+  { name:'K1', speed:15.0410686, amp:0.124, g:345.1, V0:190.0 },
+  { name:'O1', speed:13.9430356, amp:0.095, g:319.3, V0:306.5 },
+  { name:'P1', speed:14.9589314, amp:0.041, g:345.1, V0:350.0 },
+];
+
+// Reference epoch: Jan 1, 2000 00:00 UTC
+const EPOCH = new Date('2000-01-01T00:00:00Z');
+
+function hoursFromEpoch(date) {
+  return (date - EPOCH) / 3600000;
+}
+
+const D2R = Math.PI / 180;
+
+function tideHeight(date) {
+  const t = hoursFromEpoch(date);
+  let h = Z0;
+  for (const c of CONSTITUENTS) {
+    const phase = (c.V0 + c.speed * t - c.g) * D2R;
+    h += c.amp * Math.cos(phase);
+  }
+  return h;
+}
+
+// Find local extrema in time range, scanning every 5 minutes
+function findExtrema(startDate, hours) {
+  const step = 5; // minutes
+  const steps = (hours * 60) / step;
+  const extrema = [];
+  let prev = tideHeight(startDate);
+  let prevSign = 0;
+
+  for (let i = 1; i <= steps; i++) {
+    const date = new Date(startDate.getTime() + i * step * 60000);
+    const h = tideHeight(date);
+    const sign = h > prev ? 1 : -1;
+    if (prevSign !== 0 && sign !== prevSign) {
+      // Refine with bisection
+      let lo = new Date(date.getTime() - step * 60000);
+      let hi = date;
+      for (let j = 0; j < 12; j++) {
+        const mid = new Date((lo.getTime() + hi.getTime()) / 2);
+        const hMid = tideHeight(mid);
+        const loH = tideHeight(lo);
+        if ((hMid > loH) === (hMid > tideHeight(hi))) lo = mid;
+        else hi = mid;
+      }
+      const tMid = new Date((lo.getTime() + hi.getTime()) / 2);
+      extrema.push({ date: tMid, height: tideHeight(tMid), isHigh: prevSign > 0 });
+    }
+    prevSign = sign;
+    prev = h;
+  }
+  return extrema;
+}
+
+// ═══════════════════════════════════════════════════
+// MOON PHASE
+// ═══════════════════════════════════════════════════
+function moonPhase(date) {
+  const known = new Date('2000-01-06T18:14:00Z'); // known new moon
+  const cycleMs = 29.53058867 * 24 * 3600000;
+  const age = ((date - known) % cycleMs + cycleMs) % cycleMs / cycleMs * 29.53;
+  let icon, name;
+  if (age < 1.85) { icon='🌑'; name='Neumond'; }
+  else if (age < 7.38) { icon='🌒'; name='Zunehmend'; }
+  else if (age < 9.22) { icon='🌓'; name='Erstes Viertel'; }
+  else if (age < 14.76) { icon='🌔'; name='Zunehmend'; }
+  else if (age < 16.61) { icon='🌕'; name='Vollmond'; }
+  else if (age < 22.15) { icon='🌖'; name='Abnehmend'; }
+  else if (age < 23.99) { icon='🌗'; name='Letztes Viertel'; }
+  else if (age < 29.53) { icon='🌘'; name='Abnehmend'; }
+  else { icon='🌑'; name='Neumond'; }
+  return { icon, name, age };
+}
+
+// ═══════════════════════════════════════════════════
+// MINI WAVE  (hero card – ±4h around now)
+// ═══════════════════════════════════════════════════
+function drawMiniWave() {
+  const canvas = document.getElementById('miniWave');
+  if (!canvas) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth || 300;
+  const H = 72;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  const cx = canvas.getContext('2d');
+  cx.scale(dpr, dpr);
+
+  const now    = new Date();
+  const pastH  = 4, futureH = 8;          // 4h past, 8h future = 12h window
+  const spanMs = (pastH + futureH) * 3600000;
+  const startMs = now.getTime() - pastH * 3600000;
+  const nowFrac = pastH / (pastH + futureH);   // fraction where "now" sits
+
+  // Sample the tide curve
+  const N = 300;
+  const xArr = [], yArr = [];
+  const yMin = 0.2, yMax = 4.1;
+  const toY = h => H - 6 - (Math.max(yMin, Math.min(yMax, h)) - yMin) / (yMax - yMin) * (H - 10);
+  for (let i = 0; i <= N; i++) {
+    const ms = startMs + (i / N) * spanMs;
+    xArr.push((i / N) * W);
+    yArr.push(toY(tideHeight(new Date(ms))));
+  }
+
+  // Gradient fill
+  const grad = cx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0,   'rgba(34,211,192,0.50)');
+  grad.addColorStop(0.6, 'rgba(10,107,155,0.22)');
+  grad.addColorStop(1,   'rgba(7,30,52,0.05)');
+
+  // Draw filled wave (smooth quadratic bezier)
+  function drawCurve() {
+    cx.beginPath();
+    cx.moveTo(xArr[0], yArr[0]);
+    for (let i = 1; i < N; i++) {
+      const mx = (xArr[i-1] + xArr[i]) / 2;
+      const my = (yArr[i-1] + yArr[i]) / 2;
+      cx.quadraticCurveTo(xArr[i-1], yArr[i-1], mx, my);
+    }
+    cx.lineTo(xArr[N], yArr[N]);
+  }
+
+  // Fill
+  drawCurve();
+  cx.lineTo(W, H); cx.lineTo(0, H); cx.closePath();
+  cx.fillStyle = grad;
+  cx.fill();
+
+  // Stroke
+  drawCurve();
+  cx.strokeStyle = 'rgba(34,211,192,0.95)';
+  cx.lineWidth = 2;
+  cx.stroke();
+
+  // "Past" dim overlay
+  const nowX = nowFrac * W;
+  cx.fillStyle = 'rgba(7,30,52,0.35)';
+  cx.fillRect(0, 0, nowX, H);
+
+  // "Now" dashed line
+  cx.save();
+  cx.beginPath(); cx.moveTo(nowX, 0); cx.lineTo(nowX, H);
+  cx.strokeStyle = 'rgba(255,200,80,0.8)';
+  cx.lineWidth = 1.5; cx.setLineDash([3,3]); cx.stroke();
+  cx.restore();
+
+  // Glow + dot at current position
+  const nowH  = tideHeight(now);
+  const nowY  = toY(nowH);
+  const glow  = cx.createRadialGradient(nowX, nowY, 0, nowX, nowY, 12);
+  glow.addColorStop(0,   'rgba(255,255,255,0.6)');
+  glow.addColorStop(0.4, 'rgba(34,211,192,0.3)');
+  glow.addColorStop(1,   'rgba(34,211,192,0)');
+  cx.beginPath(); cx.arc(nowX, nowY, 12, 0, Math.PI*2);
+  cx.fillStyle = glow; cx.fill();
+  cx.beginPath(); cx.arc(nowX, nowY, 4.5, 0, Math.PI*2);
+  cx.fillStyle = 'white'; cx.fill();
+  cx.strokeStyle = 'rgba(34,211,192,1)';
+  cx.lineWidth = 2; cx.stroke();
+
+  // Update time labels
+  const lbl = (offsetH) => {
+    const d = new Date(now.getTime() + offsetH * 3600000);
+    return fmtTime(d);
+  };
+  const safe = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
+  safe('wl-4h',  lbl(-4));
+  safe('wl-2h',  lbl(-2));
+  safe('wl+2h',  lbl(+2));
+  safe('wl+4h',  lbl(+4));
+  safe('wl+8h',  lbl(+8));
+}
+
+// ═══════════════════════════════════════════════════
+// CHART  (linear x-axis = no date-adapter needed)
+// ═══════════════════════════════════════════════════
+let chart = null;
+
+function buildChartPoints(startMs, hours) {
+  const pts = [];
+  for (let m = 0; m <= hours * 4; m++) {
+    const ms = startMs + m * 15 * 60000;
+    pts.push({ x: ms, y: tideHeight(new Date(ms)) });
+  }
+  return pts;
+}
+
+function initChart() {
+  const ctx = document.getElementById('tideChart').getContext('2d');
+  const startMs = zanMidnight(0).getTime();
+  const pts = buildChartPoints(startMs, 48);
+
+  // Extrema markers
+  const extr = findExtrema(new Date(startMs), 48);
+  const hwPts = extr.filter(e => e.isHigh).map(e => ({ x: e.date.getTime(), y: e.height }));
+  const lwPts = extr.filter(e => !e.isHigh).map(e => ({ x: e.date.getTime(), y: e.height }));
+
+  const grad = ctx.createLinearGradient(0, 0, 0, 160);
+  grad.addColorStop(0,   'rgba(26,179,200,0.55)');
+  grad.addColorStop(0.5, 'rgba(10,107,155,0.28)');
+  grad.addColorStop(1,   'rgba(7,30,52,0.05)');
+
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      datasets: [
+        {
+          // ── Tide wave ──
+          data: pts,
+          parsing: false,
+          borderColor: 'rgba(34,211,192,1)',
+          backgroundColor: grad,
+          borderWidth: 2.5,
+          pointRadius: 0,
+          fill: true,
+          tension: 0.45,
+        },
+        {
+          // ── Hochwasser dots ──
+          type: 'scatter',
+          data: hwPts,
+          parsing: false,
+          pointBackgroundColor: '#34d39a',
+          pointBorderColor: 'white',
+          pointBorderWidth: 1.5,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        },
+        {
+          // ── Niedrigwasser dots ──
+          type: 'scatter',
+          data: lwPts,
+          parsing: false,
+          pointBackgroundColor: '#f4845f',
+          pointBorderColor: 'white',
+          pointBorderWidth: 1.5,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        },
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          intersect: false,
+          backgroundColor: 'rgba(7,30,52,0.92)',
+          titleColor: 'rgba(255,255,255,0.55)',
+          bodyColor: 'white',
+          titleFont: { size: 10 },
+          bodyFont: { size: 13, weight: 'bold' },
+          padding: 10,
+          callbacks: {
+            title: items => fmtTime(new Date(items[0].parsed.x)),
+            label: item => {
+              if (item.datasetIndex === 0) return ' ' + item.parsed.y.toFixed(2) + ' m';
+              if (item.datasetIndex === 1) return ' 🌊 HW ' + item.parsed.y.toFixed(2) + ' m';
+              return ' 〰️ NW ' + item.parsed.y.toFixed(2) + ' m';
+            },
+          }
+        }
+      },
+      scales: {
+        x: {
+          type: 'linear',
+          min: startMs,
+          max: startMs + 48 * 3600000,
+          grid: { color: 'rgba(255,255,255,0.05)' },
+          ticks: {
+            color: 'rgba(255,255,255,0.3)',
+            maxRotation: 0,
+            font: { size: 10 },
+            maxTicksLimit: 9,
+            stepSize: 6 * 3600000,
+            callback: v => fmtTime(new Date(v)),
+          }
+        },
+        y: {
+          min: 0, max: 4.2,
+          grid: { color: 'rgba(255,255,255,0.06)' },
+          ticks: {
+            color: 'rgba(255,255,255,0.3)',
+            font: { size: 10 },
+            callback: v => v.toFixed(1) + ' m',
+          }
+        }
+      },
+      interaction: { mode: 'index', intersect: false },
+      animation: { duration: 900, easing: 'easeInOutQuart' },
+    },
+    plugins: [{
+      id: 'nowLine',
+      afterDraw(c) {
+        const nowMs = Date.now();
+        const xs = c.scales.x, ys = c.scales.y;
+        const x = xs.getPixelForValue(nowMs);
+        if (x < xs.left || x > xs.right) return;
+        const cx = c.ctx;
+        cx.save();
+        cx.beginPath(); cx.moveTo(x, ys.top); cx.lineTo(x, ys.bottom);
+        cx.strokeStyle = 'rgba(255,200,80,0.85)';
+        cx.lineWidth = 2; cx.setLineDash([4,4]); cx.stroke();
+        cx.fillStyle = 'rgba(255,200,80,1)';
+        cx.font = 'bold 9px sans-serif';
+        cx.fillText('JETZT', x + 3, ys.top + 11);
+        cx.restore();
+      }
+    }]
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// TIMEZONE HELPERS  (Zanzibar = UTC+3 = EAT)
+// ═══════════════════════════════════════════════════
+const TZ = 'Africa/Dar_es_Salaam';
+const TZOPTS = { timeZone: TZ };
+
+function zanMidnight(offsetDays = 0) {
+  // Returns a UTC Date representing 00:00 EAT on today + offsetDays
+  const now = new Date();
+  const ymd = new Intl.DateTimeFormat('en-CA', { ...TZOPTS, year:'numeric', month:'2-digit', day:'2-digit' }).format(now).split('-');
+  return new Date(Date.UTC(+ymd[0], +ymd[1]-1, +ymd[2] + offsetDays) - 3 * 3600000);
+}
+
+function fmtTime(date) {
+  return date.toLocaleTimeString('de-DE', { ...TZOPTS, hour:'2-digit', minute:'2-digit' });
+}
+function fmtDate(date) {
+  return date.toLocaleDateString('de-DE', { ...TZOPTS, weekday:'short', day:'numeric', month:'short' });
+}
+function fmtDateLong(date) {
+  return date.toLocaleDateString('de-DE', { ...TZOPTS, weekday:'long', day:'numeric', month:'long' });
+}
+
+// ═══════════════════════════════════════════════════
+// DAY SELECTOR
+// ═══════════════════════════════════════════════════
+let selectedDay = 0;
+
+function buildDaySelector() {
+  const container = document.getElementById('day-selector');
+  container.innerHTML = '';
+  for (let i = 0; i < 7; i++) {
+    const d = zanMidnight(i);
+    const btn = document.createElement('button');
+    btn.className = 'day-btn' + (i === selectedDay ? ' active' : '');
+    const dayName = i === 0 ? 'Heute' : i === 1 ? 'Morgen' :
+      d.toLocaleDateString('de-DE', { ...TZOPTS, weekday: 'short' });
+    const dayNum = d.toLocaleDateString('de-DE', { ...TZOPTS, day: 'numeric' });
+    btn.innerHTML = `<div>${dayName}</div><div>${dayNum}</div>`;
+    btn.addEventListener('click', () => {
+      selectedDay = i;
+      document.querySelectorAll('.day-btn').forEach((b,j) =>
+        b.classList.toggle('active', j === i));
+      renderDayTable(i);
+    });
+    container.appendChild(btn);
+  }
+}
+
+function renderDayTable(offset) {
+  const dayStart = zanMidnight(offset);
+  const dayEnd = new Date(dayStart.getTime() + 27 * 3600000);
+  const extrema = findExtrema(dayStart, 27).filter(e =>
+    e.date >= dayStart && e.date <= dayEnd
+  );
+
+  const title = document.getElementById('table-title');
+  title.textContent = offset === 0 ? 'Heute im Überblick' :
+    offset === 1 ? 'Morgen im Überblick' : fmtDateLong(dayStart);
+
+  const tbl = document.getElementById('tide-table');
+  const maxH = Math.max(...extrema.map(e => e.height));
+  const minH = Math.min(...extrema.map(e => e.height));
+  const range = maxH - minH || 1;
+
+  tbl.innerHTML = extrema.map(e => {
+    const pct = ((e.height - minH) / range * 100).toFixed(0);
+    const type = e.isHigh ? 'Hochwasser' : 'Niedrigwasser';
+    const cls = e.isHigh ? 'hw' : 'lw';
+    const ico = e.isHigh ? '🌊' : '〰️';
+    return `
+      <div class="tide-row">
+        <div class="tide-row-icon">${ico}</div>
+        <div class="tide-row-info">
+          <div class="tide-row-type ${cls}">${type}</div>
+          <div class="tide-row-time">${fmtDate(e.date)} &nbsp;·&nbsp; ${fmtTime(e.date)}</div>
+          <div class="tide-row-bar"><div class="tide-row-bar-fill" style="width:${pct}%"></div></div>
+        </div>
+        <div class="tide-row-height">${e.height.toFixed(2)} m</div>
+      </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════
+// MAIN UPDATE LOOP
+// ═══════════════════════════════════════════════════
+function formatCountdown(ms) {
+  if (ms < 0) return 'jetzt';
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  if (h > 0) return `in ${h}h ${m}min`;
+  return `in ${m} min`;
+}
+
+function update() {
+  const now = new Date();
+
+  // Clock in Zanzibar time (UTC+3)
+  const zanNow = new Date(now.getTime() + 3 * 3600000);
+  const clockStr = zanNow.toLocaleString('de-DE', {
+    timeZone: 'Africa/Dar_es_Salaam',
+    weekday: 'long', day: 'numeric', month: 'long',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+  document.getElementById('clock').textContent = '🕐 ' + clockStr + ' (EAT)';
+
+  // Current height
+  const h = tideHeight(now);
+  document.getElementById('tide-height').textContent = h.toFixed(2);
+
+  // Trend
+  const hPlus = tideHeight(new Date(now.getTime() + 10 * 60000));
+  const rising = hPlus > h;
+  const tideName = document.getElementById('tide-name');
+  const trendArrow = document.getElementById('trend-arrow');
+  const trendText = document.getElementById('trend-text');
+
+  if (rising) {
+    tideName.textContent = 'Flut';
+    tideName.className = 'tide-name rising';
+    trendArrow.textContent = '↑';
+    trendArrow.className = 'trend-arrow rising';
+    trendText.textContent = 'Wasser steigt';
+  } else {
+    tideName.textContent = 'Ebbe';
+    tideName.className = 'tide-name falling';
+    trendArrow.textContent = '↓';
+    trendArrow.className = 'trend-arrow falling';
+    trendText.textContent = 'Wasser fällt';
+  }
+
+  // Mini wave canvas
+  drawMiniWave();
+
+  // Next extrema
+  const extrema = findExtrema(new Date(now.getTime() - 3600000), 36);
+  const upcoming = extrema.filter(e => e.date > now).slice(0, 2);
+
+  function fillTile(idSuffix, ex) {
+    if (!ex) return;
+    const cls = ex.isHigh ? 'hw' : 'lw';
+    const label = ex.isHigh ? '🌊 Hochwasser' : '〰️ Niedrigwasser';
+    document.getElementById('next'+idSuffix+'-type').innerHTML = `<span class="${cls}">${label}</span>`;
+    document.getElementById('next'+idSuffix+'-time').textContent =
+      ex.date.toLocaleTimeString('de-DE', { timeZone:'Africa/Dar_es_Salaam', hour:'2-digit', minute:'2-digit' });
+    document.getElementById('next'+idSuffix+'-height').textContent = ex.height.toFixed(2) + ' m';
+    document.getElementById('next'+idSuffix+'-countdown').textContent = formatCountdown(ex.date - now);
+  }
+  fillTile(1, upcoming[0]);
+  fillTile(2, upcoming[1]);
+
+  // Moon
+  const moon = moonPhase(now);
+  document.getElementById('moon-icon').textContent = moon.icon;
+  document.getElementById('moon-name').textContent = moon.name;
+  document.getElementById('moon-sub').textContent = `Tag ${moon.age.toFixed(1)} von 29.5`;
+
+  // Tidal range (using Zanzibar today)
+  const zanToday = zanMidnight(0);
+  const zanTodayEnd = new Date(zanToday.getTime() + 27 * 3600000);
+  const todayExtrema = extrema.filter(e => e.date >= zanToday && e.date < zanTodayEnd);
+  if (todayExtrema.length >= 2) {
+    const highs = todayExtrema.filter(e => e.isHigh).map(e => e.height);
+    const lows = todayExtrema.filter(e => !e.isHigh).map(e => e.height);
+    if (highs.length && lows.length) {
+      const range = Math.max(...highs) - Math.min(...lows);
+      document.getElementById('range-value').textContent = range.toFixed(2) + ' m';
+      document.getElementById('range-type').textContent = range > 2.5 ? 'Springtide' :
+        range < 1.5 ? 'Nipptide' : 'Mittlere Tide';
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// STARS
+// ═══════════════════════════════════════════════════
+function createStars() {
+  const container = document.getElementById('stars');
+  for (let i = 0; i < 60; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const size = Math.random() * 2.5 + 0.5;
+    s.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${Math.random()*100}%;
+      width:${size}px; height:${size}px;
+      --d:${(Math.random()*3+2).toFixed(1)}s;
+      animation-delay:${(Math.random()*4).toFixed(1)}s;
+    `;
+    container.appendChild(s);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+createStars();
+try { initChart(); } catch(e) { console.warn('Chart init failed:', e); }
+buildDaySelector();
+renderDayTable(0);
+update();
+setInterval(update, 30000);
+setInterval(() => {
+  const now = new Date();
+  const zanNow = new Date(now.getTime() + 3 * 3600000);
+  document.getElementById('clock').textContent = '🕐 ' +
+    zanNow.toLocaleString('de-DE', {
+      timeZone: 'Africa/Dar_es_Salaam',
+      weekday: 'long', day: 'numeric', month: 'long',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    }) + ' (EAT)';
+}, 1000);
+</script>
+</body>
+</html>
