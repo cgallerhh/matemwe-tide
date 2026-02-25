@@ -375,6 +375,68 @@
     }
     .day-btn div:first-child { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; }
     .day-btn div:last-child { font-size: 18px; font-weight: 700; }
+
+    /* ── Hero countdown ── */
+    .hero-countdown {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      font-size: 13px;
+      color: var(--sand-light);
+      text-align: center;
+      letter-spacing: 0.2px;
+    }
+
+    /* ── Weather / Astro card ── */
+    .weather-card {
+      margin: 0 20px 16px;
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 24px;
+      padding: 20px;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .astro-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .astro-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+    }
+    .astro-ico { font-size: 22px; flex-shrink: 0; }
+    .astro-lbl {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: rgba(255,255,255,0.4);
+    }
+    .astro-val {
+      font-size: 16px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      margin-top: 1px;
+    }
+    .temp-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+    }
+    .temp-hi { color: var(--falling); font-size: 16px; font-weight: 700; }
+    .temp-lo { color: #7ecbf5; font-size: 16px; font-weight: 700; }
+    .temp-sep { color: rgba(255,255,255,0.3); margin: 0 2px; }
   </style>
 </head>
 <body>
@@ -449,6 +511,7 @@
       <span class="trend-arrow" id="trend-arrow">→</span>
       <span id="trend-text">Berechne…</span>
     </div>
+    <div class="hero-countdown" id="hero-countdown">—</div>
   </div>
 
   <!-- Next tides -->
@@ -499,6 +562,54 @@
       <div class="info-tile-value" id="range-icon">📏</div>
       <div class="info-tile-text" id="range-value">—</div>
       <div class="info-tile-sub" id="range-type">—</div>
+    </div>
+  </div>
+
+  <!-- Weather & Astronomy -->
+  <div class="weather-card">
+    <div class="section-title">Wetter &amp; Astronomie</div>
+    <div class="astro-grid">
+      <div class="astro-item">
+        <span class="astro-ico">🌅</span>
+        <div>
+          <div class="astro-lbl">Sonnenaufgang</div>
+          <div class="astro-val" id="sunrise">—</div>
+        </div>
+      </div>
+      <div class="astro-item">
+        <span class="astro-ico">🌇</span>
+        <div>
+          <div class="astro-lbl">Sonnenuntergang</div>
+          <div class="astro-val" id="sunset">—</div>
+        </div>
+      </div>
+      <div class="astro-item">
+        <span class="astro-ico">🌙</span>
+        <div>
+          <div class="astro-lbl">Mondaufgang</div>
+          <div class="astro-val" id="moonrise">—</div>
+        </div>
+      </div>
+      <div class="astro-item">
+        <span class="astro-ico">🌑</span>
+        <div>
+          <div class="astro-lbl">Monduntergang</div>
+          <div class="astro-val" id="moonset">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="temp-row">
+      <span class="astro-ico">🌡️</span>
+      <div>
+        <div class="astro-lbl">Temperatur heute · Matemwe</div>
+        <div>
+          <span class="temp-hi" id="temp-max">—</span>
+          <span class="temp-sep">°C max</span>
+          <span class="temp-sep"> / </span>
+          <span class="temp-lo" id="temp-min">—</span>
+          <span class="temp-sep">°C min</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -598,6 +709,106 @@ function moonPhase(date) {
   else if (age < 29.53) { icon='🌘'; name='Abnehmend'; }
   else { icon='🌑'; name='Neumond'; }
   return { icon, name, age };
+}
+
+// ═══════════════════════════════════════════════════
+// LOCATION (Matemwe, Zanzibar)
+// ═══════════════════════════════════════════════════
+const LAT = -5.853;
+const LON = 39.361;
+
+// ═══════════════════════════════════════════════════
+// MOON ALTITUDE  (needed for moonrise/moonset scan)
+// ═══════════════════════════════════════════════════
+function moonAltitude(date) {
+  const JD = date.getTime() / 86400000 + 2440587.5;
+  const T  = (JD - 2451545.0) / 36525;
+  const r  = x => ((x % 360) + 360) % 360 * D2R;
+
+  // Simplified lunar coordinates (Meeus Ch.47, truncated to ~1°)
+  const L  = 218.316 + 13.176396 * (JD - 2451545.0);
+  const M  = 134.963 + 13.064993 * (JD - 2451545.0);
+  const F  = 93.272  + 13.229350 * (JD - 2451545.0);
+  const D  = 297.850 + 12.190749 * (JD - 2451545.0);
+  const Mb = 357.528 + 0.985600  * (JD - 2451545.0); // Sun anomaly
+
+  const moonLon = L
+    + 6.2888 * Math.sin(r(M))
+    + 1.2740 * Math.sin(r(2*D - M))
+    + 0.6583 * Math.sin(r(2*D))
+    + 0.2136 * Math.sin(r(2*M))
+    - 0.1851 * Math.sin(r(Mb))
+    - 0.1143 * Math.sin(r(2*F))
+    + 0.0588 * Math.sin(r(2*D - 2*M))
+    + 0.0572 * Math.sin(r(2*D - Mb - M))
+    + 0.0533 * Math.sin(r(2*D + M));
+  const moonLat = 5.1282 * Math.sin(r(F))
+    + 0.2806 * Math.sin(r(M + F))
+    + 0.2777 * Math.sin(r(M - F))
+    + 0.1732 * Math.sin(r(2*D - F));
+
+  const eps   = (23.439 - 0.0130 * T) * D2R;
+  const lonR  = moonLon * D2R;
+  const latR  = moonLat * D2R;
+
+  const sinDec = Math.sin(latR) * Math.cos(eps) + Math.cos(latR) * Math.sin(eps) * Math.sin(lonR);
+  const Dec    = Math.asin(Math.max(-1, Math.min(1, sinDec)));
+  const RA     = Math.atan2(
+    Math.sin(lonR) * Math.cos(eps) - Math.tan(latR) * Math.sin(eps),
+    Math.cos(lonR)
+  );
+
+  // Greenwich Mean Sidereal Time
+  const GMST_rad = ((280.46061837 + 360.98564736629 * (JD - 2451545.0)) % 360) * D2R;
+  const H        = GMST_rad + LON * D2R - RA; // local hour angle
+
+  const latR2  = LAT * D2R;
+  const sinAlt = Math.sin(latR2) * sinDec + Math.cos(latR2) * Math.cos(Dec) * Math.cos(H);
+  return Math.asin(Math.max(-1, Math.min(1, sinAlt))) / D2R;
+}
+
+// Find moonrise/moonset by scanning EAT today in 2-min steps
+function computeMoonRiseSet() {
+  const startUTC = zanMidnight(0);
+  let prevAlt = moonAltitude(startUTC);
+  let rise = null, set = null;
+  for (let m = 1; m <= 24 * 60; m += 2) {
+    const t   = new Date(startUTC.getTime() + m * 60000);
+    const alt = moonAltitude(t);
+    if (!rise && prevAlt < 0 && alt >= 0) {
+      const frac = -prevAlt / (alt - prevAlt);
+      rise = new Date(startUTC.getTime() + (m - 2 + frac * 2) * 60000);
+    } else if (!set && prevAlt >= 0 && alt < 0) {
+      const frac = prevAlt / (prevAlt - alt);
+      set  = new Date(startUTC.getTime() + (m - 2 + frac * 2) * 60000);
+    }
+    prevAlt = alt;
+  }
+  return { rise, set };
+}
+
+// ═══════════════════════════════════════════════════
+// WEATHER + SUNRISE/SUNSET  (Open-Meteo, free/no key)
+// ═══════════════════════════════════════════════════
+async function fetchWeather() {
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${LAT}&longitude=${LON}` +
+      `&daily=temperature_2m_max,temperature_2m_min,sunrise,sunset` +
+      `&timezone=Africa%2FDar_es_Salaam&forecast_days=1`;
+    const resp = await fetch(url);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    const d    = data.daily;
+
+    const safe = (id, v) => { const el = document.getElementById(id); if (el && v != null) el.textContent = v; };
+    safe('temp-max', parseFloat(d.temperature_2m_max[0]).toFixed(1));
+    safe('temp-min', parseFloat(d.temperature_2m_min[0]).toFixed(1));
+    // API returns "YYYY-MM-DDTHH:MM"
+    safe('sunrise', d.sunrise[0].substring(11, 16));
+    safe('sunset',  d.sunset[0].substring(11, 16));
+  } catch (e) {
+    console.warn('Weather fetch failed:', e);
+  }
 }
 
 // ═══════════════════════════════════════════════════
@@ -991,6 +1202,19 @@ function update() {
   fillTile(1, upcoming[0]);
   fillTile(2, upcoming[1]);
 
+  // Hero countdown: "Flut erreicht Höhepunkt in Xh Ymin"
+  if (upcoming[0]) {
+    const msLeft = upcoming[0].date - now;
+    const hLeft  = Math.floor(msLeft / 3600000);
+    const mLeft  = Math.floor((msLeft % 3600000) / 60000);
+    const icon   = upcoming[0].isHigh ? '🌊' : '〰️';
+    const word   = upcoming[0].isHigh ? 'Hochwasser' : 'Niedrigwasser';
+    const punkt  = upcoming[0].isHigh ? 'Höchststand' : 'Tiefststand';
+    const timeStr = hLeft > 0 ? `${hLeft}h ${mLeft}min` : `${mLeft}min`;
+    document.getElementById('hero-countdown').textContent =
+      `${icon} ${word} erreicht ${punkt} in ${timeStr}`;
+  }
+
   // Moon
   const moon = moonPhase(now);
   document.getElementById('moon-icon').textContent = moon.icon;
@@ -1010,6 +1234,18 @@ function update() {
       document.getElementById('range-type').textContent = range > 2.5 ? 'Springtide' :
         range < 1.5 ? 'Nipptide' : 'Mittlere Tide';
     }
+  }
+
+  // Moonrise/Moonset (run only once per minute to avoid heavy computation)
+  if (!update._moonTs || now - update._moonTs > 60000) {
+    update._moonTs = now;
+    const { rise, set } = computeMoonRiseSet();
+    const safe = (id, d) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = d ? fmtTime(d) : '—';
+    };
+    safe('moonrise', rise);
+    safe('moonset',  set);
   }
 }
 
@@ -1041,12 +1277,15 @@ try { initChart(); } catch(e) { console.warn('Chart init failed:', e); }
 buildDaySelector();
 renderDayTable(0);
 update();
+fetchWeather();
 setInterval(update, 30000);
+// Refresh weather every 30 minutes
+setInterval(fetchWeather, 30 * 60 * 1000);
+// Fast clock tick (seconds)
 setInterval(() => {
   const now = new Date();
-  const zanNow = new Date(now.getTime() + 3 * 3600000);
   document.getElementById('clock').textContent = '🕐 ' +
-    zanNow.toLocaleString('de-DE', {
+    now.toLocaleString('de-DE', {
       timeZone: 'Africa/Dar_es_Salaam',
       weekday: 'long', day: 'numeric', month: 'long',
       hour: '2-digit', minute: '2-digit', second: '2-digit'
