@@ -498,12 +498,11 @@
     <div class="mini-wave-wrap">
       <canvas id="miniWave" height="72"></canvas>
       <div class="wave-labels">
-        <span id="wl-4h">–4h</span>
-        <span id="wl-2h">–2h</span>
-        <span style="color:rgba(255,200,80,0.7)">Jetzt</span>
-        <span id="wl+2h">+2h</span>
-        <span id="wl+4h">+4h</span>
-        <span id="wl+8h">+8h</span>
+        <span id="wl-6h">–6h</span>
+        <span id="wl-3h">–3h</span>
+        <span style="color:rgba(255,200,80,0.8);font-weight:600">Jetzt</span>
+        <span id="wl+3h">+3h</span>
+        <span id="wl+6h">+6h</span>
       </div>
     </div>
 
@@ -826,10 +825,10 @@ function drawMiniWave() {
   cx.scale(dpr, dpr);
 
   const now    = new Date();
-  const pastH  = 4, futureH = 8;          // 4h past, 8h future = 12h window
+  const pastH  = 6, futureH = 6;          // symmetrisch: 6h zurück, 6h voraus → Marker exakt in Mitte
   const spanMs = (pastH + futureH) * 3600000;
   const startMs = now.getTime() - pastH * 3600000;
-  const nowFrac = pastH / (pastH + futureH);   // fraction where "now" sits
+  const nowFrac = 0.5;                         // immer exakt Mitte
 
   // Sample the tide curve
   const N = 300;
@@ -904,11 +903,10 @@ function drawMiniWave() {
     return fmtTime(d);
   };
   const safe = (id, txt) => { const el = document.getElementById(id); if(el) el.textContent = txt; };
-  safe('wl-4h',  lbl(-4));
-  safe('wl-2h',  lbl(-2));
-  safe('wl+2h',  lbl(+2));
-  safe('wl+4h',  lbl(+4));
-  safe('wl+8h',  lbl(+8));
+  safe('wl-6h',  lbl(-6));
+  safe('wl-3h',  lbl(-3));
+  safe('wl+3h',  lbl(+3));
+  safe('wl+6h',  lbl(+6));
 }
 
 // ═══════════════════════════════════════════════════
