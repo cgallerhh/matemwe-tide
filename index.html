@@ -948,9 +948,10 @@ function update() {
   const h = tideHeight(now);
   document.getElementById('tide-height').textContent = h.toFixed(2);
 
-  // Trend
-  const hPlus = tideHeight(new Date(now.getTime() + 10 * 60000));
-  const rising = hPlus > h;
+  // Trend – symmetrischer Vergleich ±20min damit Wendepunkte korrekt erkannt werden
+  const hBefore = tideHeight(new Date(now.getTime() - 20 * 60000));
+  const hAfter  = tideHeight(new Date(now.getTime() + 20 * 60000));
+  const rising = hAfter > hBefore;
   const tideName = document.getElementById('tide-name');
   const trendArrow = document.getElementById('trend-arrow');
   const trendText = document.getElementById('trend-text');
@@ -995,13 +996,13 @@ function update() {
   document.getElementById('moon-name').textContent = moon.name;
   document.getElementById('moon-sub').textContent = `Tag ${moon.age.toFixed(1)} von 29.5`;
 
-  // Tidal range (using Zanzibar today)
+  // Tidal range – eigenes Suchfenster ab EAT-Mitternacht damit frühe Extrema nicht fehlen
   const zanToday = zanMidnight(0);
   const zanTodayEnd = new Date(zanToday.getTime() + 27 * 3600000);
-  const todayExtrema = extrema.filter(e => e.date >= zanToday && e.date < zanTodayEnd);
+  const todayExtrema = findExtrema(zanToday, 27).filter(e => e.date >= zanToday && e.date < zanTodayEnd);
   if (todayExtrema.length >= 2) {
     const highs = todayExtrema.filter(e => e.isHigh).map(e => e.height);
-    const lows = todayExtrema.filter(e => !e.isHigh).map(e => e.height);
+    const lows  = todayExtrema.filter(e => !e.isHigh).map(e => e.height);
     if (highs.length && lows.length) {
       const range = Math.max(...highs) - Math.min(...lows);
       document.getElementById('range-value').textContent = range.toFixed(2) + ' m';
