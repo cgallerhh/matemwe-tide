@@ -935,9 +935,8 @@ function formatCountdown(ms) {
 function update() {
   const now = new Date();
 
-  // Clock in Zanzibar time (UTC+3)
-  const zanNow = new Date(now.getTime() + 3 * 3600000);
-  const clockStr = zanNow.toLocaleString('de-DE', {
+  // Clock in Zanzibar time – toLocaleString mit timeZone macht die Konvertierung, kein manuelles +3h
+  const clockStr = now.toLocaleString('de-DE', {
     timeZone: 'Africa/Dar_es_Salaam',
     weekday: 'long', day: 'numeric', month: 'long',
     hour: '2-digit', minute: '2-digit', second: '2-digit'
