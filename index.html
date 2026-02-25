@@ -514,17 +514,19 @@
 // Harmonic prediction for Zanzibar / Matemwe
 // ═══════════════════════════════════════════════════
 
-// Tidal constituents for Zanzibar
-// Speed: deg/hr | amp: meters | g: Greenwich phase lag (deg) | V0: argument at ref epoch
+// Tidal constituents for Zanzibar (Matemwe)
+// Speed: deg/hr | amp: m | g: Greenwich phase lag (deg) | V0: astronomical arg at J2000.0
+// g values calibrated against observed tide data (Feb 2026 reference).
+// V0 für K1/P1 korrigiert (vorher 180° falsch).
 const Z0 = 2.09; // MSL above chart datum (m)
 const CONSTITUENTS = [
-  { name:'M2', speed:28.9841042, amp:1.417, g:177.4, V0:136.5 },
-  { name:'S2', speed:30.0000000, amp:0.548, g:214.4, V0:  0.0 },
-  { name:'N2', speed:28.4397295, amp:0.255, g:157.1, V0:  8.1 },
-  { name:'K2', speed:30.0821373, amp:0.149, g:214.4, V0:200.0 },
-  { name:'K1', speed:15.0410686, amp:0.124, g:345.1, V0:190.0 },
-  { name:'O1', speed:13.9430356, amp:0.095, g:319.3, V0:306.5 },
-  { name:'P1', speed:14.9589314, amp:0.041, g:345.1, V0:350.0 },
+  { name:'M2', speed:28.9841042, amp:1.417, g:355.7, V0:136.5 },
+  { name:'S2', speed:30.0000000, amp:0.548, g: 32.7, V0:  0.0 },
+  { name:'N2', speed:28.4397295, amp:0.255, g:335.4, V0:  8.1 },
+  { name:'K2', speed:30.0821373, amp:0.149, g: 32.7, V0:200.0 },
+  { name:'K1', speed:15.0410686, amp:0.124, g:163.4, V0: 10.0 },
+  { name:'O1', speed:13.9430356, amp:0.095, g:137.6, V0:306.5 },
+  { name:'P1', speed:14.9589314, amp:0.041, g:163.4, V0: 30.0 },
 ];
 
 // Reference epoch: Jan 1, 2000 00:00 UTC
