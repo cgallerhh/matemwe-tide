@@ -1162,19 +1162,28 @@ function update() {
   const hBefore = tideHeight(new Date(now.getTime() - 20 * 60000));
   const hAfter  = tideHeight(new Date(now.getTime() + 20 * 60000));
   const rising = hAfter > hBefore;
+
+  // Flut/Ebbe = Wasserstand relativ zu Mittelwasser (Z0):
+  //   h > Z0 → Hochwasserphase → "Flut"  (Strand überflutet, Wasser hoch)
+  //   h ≤ Z0 → Niedrigwasserphase → "Ebbe" (Riff freigelegt, Wasser niedrig)
+  // Richtungspfeil bleibt separat und zeigt ob Wasser steigt oder fällt.
+  const isHighWaterPhase = h > Z0;
   const tideName = document.getElementById('tide-name');
   const trendArrow = document.getElementById('trend-arrow');
   const trendText = document.getElementById('trend-text');
 
-  if (rising) {
+  if (isHighWaterPhase) {
     tideName.textContent = 'Flut';
     tideName.className = 'tide-name rising';
+  } else {
+    tideName.textContent = 'Ebbe';
+    tideName.className = 'tide-name falling';
+  }
+  if (rising) {
     trendArrow.textContent = '↑';
     trendArrow.className = 'trend-arrow rising';
     trendText.textContent = 'Wasser steigt';
   } else {
-    tideName.textContent = 'Ebbe';
-    tideName.className = 'tide-name falling';
     trendArrow.textContent = '↓';
     trendArrow.className = 'trend-arrow falling';
     trendText.textContent = 'Wasser fällt';
