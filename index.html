@@ -555,6 +555,7 @@
       <div class="info-tile-value" id="moon-icon">🌕</div>
       <div class="info-tile-text" id="moon-name">—</div>
       <div class="info-tile-sub" id="moon-sub">—</div>
+      <div class="info-tile-sub" id="moon-fullmoon" style="margin-top:4px;color:rgba(255,220,120,0.7)">—</div>
     </div>
     <div class="info-tile">
       <div class="info-tile-label">Tidenhub</div>
@@ -697,6 +698,10 @@ function moonPhase(date) {
   const known = new Date('2000-01-06T18:14:00Z'); // known new moon
   const cycleMs = 29.53058867 * 24 * 3600000;
   const age = ((date - known) % cycleMs + cycleMs) % cycleMs / cycleMs * 29.53;
+  // Days until next full moon (full moon = age 14.765 in the cycle)
+  const fullMoonAge = 14.765;
+  const daysToFull = ((fullMoonAge - age) % 29.53 + 29.53) % 29.53;
+  const fullMoonDate = new Date(date.getTime() + daysToFull * 24 * 3600000);
   let icon, name;
   if (age < 1.85) { icon='🌑'; name='Neumond'; }
   else if (age < 7.38) { icon='🌒'; name='Zunehmend'; }
@@ -707,7 +712,7 @@ function moonPhase(date) {
   else if (age < 23.99) { icon='🌗'; name='Letztes Viertel'; }
   else if (age < 29.53) { icon='🌘'; name='Abnehmend'; }
   else { icon='🌑'; name='Neumond'; }
-  return { icon, name, age };
+  return { icon, name, age, daysToFull, fullMoonDate };
 }
 
 // ═══════════════════════════════════════════════════
@@ -1226,7 +1231,20 @@ function update() {
   const moon = moonPhase(now);
   document.getElementById('moon-icon').textContent = moon.icon;
   document.getElementById('moon-name').textContent = moon.name;
-  document.getElementById('moon-sub').textContent = `Tag ${moon.age.toFixed(1)} von 29.5`;
+  // Days until full moon + date
+  const daysLeft = Math.round(moon.daysToFull);
+  if (daysLeft === 0) {
+    document.getElementById('moon-sub').textContent = '🌕 Heute Vollmond!';
+    document.getElementById('moon-fullmoon').textContent = '';
+  } else {
+    document.getElementById('moon-sub').textContent =
+      daysLeft === 1 ? 'Morgen Vollmond' : `${daysLeft} Tage bis Vollmond`;
+    document.getElementById('moon-fullmoon').textContent =
+      moon.fullMoonDate.toLocaleDateString('de-DE', {
+        timeZone: 'Africa/Dar_es_Salaam',
+        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+      });
+  }
 
   // Tidal range – eigenes Suchfenster ab EAT-Mitternacht damit frühe Extrema nicht fehlen
   const zanToday = zanMidnight(0);
