@@ -10,8 +10,12 @@ import hashlib
 import json
 import logging
 import time
+import warnings
 from typing import Dict, List, Optional, Tuple
 from urllib.parse import urljoin, urlparse
+
+from bs4 import XMLParsedAsHTMLWarning
+warnings.filterwarnings("ignore", category=XMLParsedAsHTMLWarning)
 
 from bs4 import BeautifulSoup
 
