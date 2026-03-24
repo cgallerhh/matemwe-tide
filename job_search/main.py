@@ -56,12 +56,15 @@ def main() -> None:
     seen = load_seen()
     location = PROFILE["location"]
 
+    # Indeed (403) and StepStone (timeout) are blocked on GitHub Actions IPs.
+    # Skip them in CI to avoid wasting ~7 minutes per run.
+    in_ci = os.environ.get("CI", "").lower() == "true"
     scrapers = [
-        ArbeitsagenturScraper(),   # official BA API – most reliable, no blocking
-        IndeedScraper(),
+        ArbeitsagenturScraper(),
         LinkedInScraper(),
-        StepStoneScraper(),        # may timeout on cloud IPs – errors handled gracefully
     ]
+    if not in_ci:
+        scrapers += [IndeedScraper(), StepStoneScraper()]
 
     raw_jobs: List[dict] = []
     for scraper in scrapers:
@@ -107,8 +110,11 @@ def main() -> None:
             f"f\u00fcr dich | {datetime.now().strftime('%d.%m.%Y')}"
         )
         html = build_html(relevant, PROFILE["name"])
-        send_email(to=recipient, subject=subject, html=html)
-        logger.info("Done – email with %d jobs sent to %s", len(relevant), recipient)
+        try:
+            send_email(to=recipient, subject=subject, html=html)
+            logger.info("Done – email with %d jobs sent to %s", len(relevant), recipient)
+        except Exception as exc:
+            logger.error("Failed to send email: %s", exc)
     else:
         logger.info("No relevant new jobs found today – no email sent.")
 
