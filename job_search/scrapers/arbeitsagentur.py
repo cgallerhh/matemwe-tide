@@ -1,13 +1,14 @@
 """
 Bundesagentur für Arbeit – offizielle, öffentliche REST-API.
-Authentifizierung via OAuth2 Client Credentials (öffentlicher Client,
-kein Secret erforderlich).
+OAuth2 Client Credentials Flow (kein Secret erforderlich).
 
 Dokumentation: https://jobsuche.api.bund.dev/
 """
 import logging
 import time
 from typing import Dict, List, Optional
+
+import requests
 
 from ..config import MAX_JOBS_PER_QUERY
 from .base import BaseScraper
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 TOKEN_URL = "https://rest.arbeitsagentur.de/oauth/token"
 BASE_URL  = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs"
-CLIENT_ID = "jobboerse-jobsuche"   # public client, no secret needed
+CLIENT_ID = "jobboerse-jobsuche"
 
 
 class ArbeitsagenturScraper(BaseScraper):
@@ -28,20 +29,31 @@ class ArbeitsagenturScraper(BaseScraper):
         self._token: Optional[str] = None
 
     def _get_token(self) -> str:
-        """Fetch a short-lived OAuth2 access token (client_credentials, no secret)."""
-        resp = self.session.post(
+        resp = requests.post(
             TOKEN_URL,
             data={"grant_type": "client_credentials", "client_id": CLIENT_ID},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=15,
         )
         resp.raise_for_status()
-        return resp.json()["access_token"]
+        token = resp.json().get("access_token", "")
+        logger.info("Arbeitsagentur: OAuth token obtained (%d chars)", len(token))
+        return token
 
-    def _auth_headers(self) -> Dict[str, str]:
-        if not self._token:
-            self._token = self._get_token()
-        return {"Authorization": f"Bearer {self._token}"}
+    def _search(self, params: dict) -> dict:
+        """Run a single search request with auth header, log body on error."""
+        resp = self.session.get(
+            BASE_URL,
+            params=params,
+            headers={"Authorization": f"Bearer {self._token}"},
+            timeout=20,
+        )
+        if not resp.ok:
+            logger.error(
+                "Arbeitsagentur API %d – body: %s", resp.status_code, resp.text[:300]
+            )
+            resp.raise_for_status()
+        return resp.json()
 
     def fetch(self, queries: List[str], location: str) -> List[Dict]:
         seen: set = set()
@@ -49,28 +61,22 @@ class ArbeitsagenturScraper(BaseScraper):
 
         try:
             self._token = self._get_token()
-            logger.debug("Arbeitsagentur: OAuth token obtained")
         except Exception as exc:
-            logger.error("Arbeitsagentur: could not obtain OAuth token: %s", exc)
+            logger.error("Arbeitsagentur: token fetch failed: %s", exc)
             return []
 
         for query in queries:
             try:
+                # BA API: use only essential params to avoid 400
                 params = {
                     "was": query,
                     "wo": location,
                     "umkreis": "50",
-                    "veroeffentlichtseit": "3",   # last 3 days (1 often returns 0 on weekends)
-                    "angebotsart": "1",            # Arbeit (regular employment)
+                    "veroeffentlichtseit": "3",
                     "size": str(MAX_JOBS_PER_QUERY),
                     "page": "0",
                 }
-                resp = self.get(
-                    BASE_URL,
-                    params=params,
-                    headers=self._auth_headers(),
-                )
-                data = resp.json()
+                data = self._search(params)
 
                 for offer in data.get("stellenangebote") or []:
                     ref = offer.get("refnr", "")
@@ -84,7 +90,6 @@ class ArbeitsagenturScraper(BaseScraper):
                         f"https://www.arbeitsagentur.de/jobsuche/jobdetail/{ref}"
                         if ref else ""
                     )
-
                     arbeitsort = offer.get("arbeitsort", {})
                     job_location = ", ".join(
                         filter(None, [arbeitsort.get("ort"), arbeitsort.get("region")])
