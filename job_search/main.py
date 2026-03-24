@@ -10,6 +10,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import List, Set
 
+from .ai_scorer import score_jobs_with_ai
 from .config import PROFILE, SEARCH_QUERIES
 from .emailer import build_html, send_email
 from .filter import is_relevant, score_job
@@ -75,15 +76,21 @@ def main() -> None:
     new_jobs = [j for j in raw_jobs if j["id"] not in seen]
     logger.info("New (not seen before): %d", len(new_jobs))
 
-    # Score & filter
-    relevant: List[dict] = []
+    # Step 1: keyword pre-filter (fast, no API cost)
+    candidates: List[dict] = []
     for job in new_jobs:
         s = score_job(job)
         if is_relevant(s):
-            relevant.append({**job, "score": s})
+            candidates.append({**job, "score": s})
+    logger.info("Candidates after keyword filter: %d", len(candidates))
 
+    # Step 2: AI re-scoring with full profile context (uses Claude API if key present)
+    relevant = score_jobs_with_ai(candidates)
+
+    # Re-apply minimum score after AI scoring (AI may lower some scores)
+    relevant = [j for j in relevant if is_relevant(j["score"])]
     relevant.sort(key=lambda j: j["score"], reverse=True)
-    logger.info("Relevant after scoring: %d", len(relevant))
+    logger.info("Relevant after AI scoring: %d", len(relevant))
 
     # Update deduplication state (mark all new jobs as seen, not just relevant ones)
     for job in new_jobs:
