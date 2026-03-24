@@ -8,6 +8,11 @@ import logging
 import os
 from datetime import datetime
 from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Load .env from repo root when running locally
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 from typing import List, Set
 
 from .ai_scorer import score_jobs_with_ai
