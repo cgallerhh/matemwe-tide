@@ -29,6 +29,16 @@ def _score_meta(score: int):
     return "Relevant", "#2563eb"
 
 
+def _ai_reason_html(job: Dict) -> str:
+    reason = job.get("ai_reason", "")
+    if not reason:
+        return ""
+    return (
+        f'<p style="margin:8px 0 0;font-size:12px;color:#6366f1;font-style:italic;">'
+        f'&#129302; KI-Bewertung: {reason}</p>'
+    )
+
+
 def _job_card(job: Dict) -> str:
     score = job.get("score", 0)
     label, score_color = _score_meta(score)
@@ -76,6 +86,7 @@ def _job_card(job: Dict) -> str:
       <p style="margin:0;font-size:13px;color:#6b7280;">
         &#128205; {job.get("location", "")}
       </p>
+      {_ai_reason_html(job)}
       {desc_html}
       <a href="{job.get("url", "#")}"
          style="display:inline-block;background:#2563eb;color:#ffffff;padding:10px 20px;
