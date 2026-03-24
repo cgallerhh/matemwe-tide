@@ -56,15 +56,18 @@ def main() -> None:
     seen = load_seen()
     location = PROFILE["location"]
 
-    # Indeed (403) and StepStone (timeout) are blocked on GitHub Actions IPs.
-    # Skip them in CI to avoid wasting ~7 minutes per run.
+    # Indeed (403), StepStone (timeout), and Arbeitsagentur (403 on token)
+    # are all blocked on GitHub Actions IPs. Skip them in CI.
     in_ci = os.environ.get("CI", "").lower() == "true"
-    scrapers = [
-        ArbeitsagenturScraper(),
-        LinkedInScraper(),
-    ]
-    if not in_ci:
-        scrapers += [IndeedScraper(), StepStoneScraper()]
+    if in_ci:
+        scrapers = [LinkedInScraper()]
+    else:
+        scrapers = [
+            ArbeitsagenturScraper(),
+            IndeedScraper(),
+            LinkedInScraper(),
+            StepStoneScraper(),
+        ]
 
     raw_jobs: List[dict] = []
     for scraper in scrapers:
