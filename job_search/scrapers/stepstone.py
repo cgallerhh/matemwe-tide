@@ -1,14 +1,13 @@
 """
-StepStone scraper – HTML scraping of the public search results page.
-Gracefully skips if the page structure changes or a request fails.
+StepStone scraper – RSS-Feed via feedparser.
+HTML-Scraping wurde ersetzt, da stepstone.de aus Cloud-IPs timeoutet.
 """
 import hashlib
 import logging
 import time
 from typing import Dict, List
-from urllib.parse import quote
 
-from bs4 import BeautifulSoup
+import feedparser
 
 from ..config import MAX_JOBS_PER_QUERY
 from .base import BaseScraper
@@ -34,7 +33,7 @@ def _slug(text: str) -> str:
 
 class StepStoneScraper(BaseScraper):
     SOURCE_NAME = "StepStone"
-    POLITE_DELAY = 2.5
+    POLITE_DELAY = 1.5
 
     def fetch(self, queries: List[str], location: str) -> List[Dict]:
         seen: set = set()
@@ -42,81 +41,39 @@ class StepStoneScraper(BaseScraper):
 
         for query in queries:
             try:
-                url = f"{BASE_URL}/jobs/{_slug(query)}/in-{_slug(location)}/"
-                resp = self.get(url, params={"radius": "50", "datePosted": "1"})
-                soup = BeautifulSoup(resp.text, "lxml")
-
-                # Primary selector – data attribute used by StepStone's article elements
-                articles = soup.find_all("article", attrs={"data-at": "job-item"})
-
-                # Fallback: any article with a data-jobid / class containing "JobCard"
-                if not articles:
-                    articles = soup.find_all(
-                        "article",
-                        class_=lambda c: c and "JobCard" in str(c),
+                url = (
+                    f"{BASE_URL}/stellenangebote"
+                    f"--{_slug(query)}"
+                    f"--in-{_slug(location)}-.html?rss=1"
+                )
+                feed = feedparser.parse(url)
+                for entry in feed.entries[:MAX_JOBS_PER_QUERY]:
+                    link = entry.get("link", "")
+                    job_id = (
+                        hashlib.md5(link.encode()).hexdigest()
+                        if link
+                        else hashlib.md5(entry.get("title", "").encode()).hexdigest()
                     )
-
-                for article in articles[:MAX_JOBS_PER_QUERY]:
-                    try:
-                        title_el = article.find(
-                            ["h2", "h3"], attrs={"data-at": "job-item-title"}
-                        ) or article.find(["h2", "h3"])
-                        company_el = article.find(
-                            attrs={"data-at": "job-item-company-name"}
-                        ) or article.find(
-                            class_=lambda c: c and "company" in str(c).lower()
-                        )
-                        link_el = article.find("a", href=True)
-                        loc_el = article.find(
-                            attrs={"data-at": "job-item-location"}
-                        )
-                        desc_el = article.find(
-                            class_=lambda c: c and "description" in str(c).lower()
-                        )
-
-                        title = title_el.get_text(strip=True) if title_el else ""
-                        if not title:
-                            continue
-
-                        href = link_el["href"] if link_el else ""
-                        if href and not href.startswith("http"):
-                            href = BASE_URL + href
-
-                        job_id = (
-                            hashlib.md5(href.encode()).hexdigest()
-                            if href
-                            else hashlib.md5(
-                                f"{title}{article.get_text()[:50]}".encode()
-                            ).hexdigest()
-                        )
-                        if job_id in seen:
-                            continue
-                        seen.add(job_id)
-
-                        jobs.append(
-                            {
-                                "id": job_id,
-                                "title": title,
-                                "company": company_el.get_text(strip=True)
-                                if company_el
-                                else "",
-                                "location": loc_el.get_text(strip=True)
-                                if loc_el
-                                else location,
-                                "url": href,
-                                "description": desc_el.get_text(strip=True)[:500]
-                                if desc_el
-                                else "",
-                                "posted_date": "",
-                                "source": self.SOURCE_NAME,
-                            }
-                        )
-                    except Exception as exc:
-                        logger.debug("StepStone article parse error: %s", exc)
-
+                    if job_id in seen:
+                        continue
+                    seen.add(job_id)
+                    # dc:creator holds the company name in StepStone's RSS feed
+                    company = (
+                        entry.get("dc_creator", "")
+                        or entry.get("author", "")
+                    ).strip()
+                    jobs.append({
+                        "id": job_id,
+                        "title": entry.get("title", "").strip(),
+                        "company": company,
+                        "location": location,
+                        "url": link,
+                        "description": entry.get("summary", "")[:500].strip(),
+                        "posted_date": entry.get("published", ""),
+                        "source": self.SOURCE_NAME,
+                    })
             except Exception as exc:
                 logger.error("StepStone query '%s' failed: %s", query, exc)
-
             time.sleep(self.POLITE_DELAY)
 
         logger.info("StepStone: %d jobs collected", len(jobs))

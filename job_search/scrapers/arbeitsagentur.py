@@ -29,10 +29,15 @@ class ArbeitsagenturScraper(BaseScraper):
         self._token: Optional[str] = None
 
     def _get_token(self) -> str:
-        resp = self.session.post(
+        # Use a plain requests.post (not the browser-like session) so the WAF
+        # on rest.arbeitsagentur.de doesn't reject the OAuth request with 403.
+        resp = requests.post(
             TOKEN_URL,
             data={"grant_type": "client_credentials", "client_id": CLIENT_ID},
-            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Accept": "application/json",
+            },
             timeout=15,
         )
         resp.raise_for_status()
