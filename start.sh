@@ -20,11 +20,18 @@ if [ ! -f ".env" ]; then
   exit 1
 fi
 
-# Neueste Version holen (lokale Änderungen z.B. seen_jobs.json kurz zwischenspeichern)
+# Neueste Version holen – seen_jobs.json lokal behalten
 echo "→ Hole neueste Version..."
-git stash --quiet
-git pull --rebase origin main
-git stash pop --quiet 2>/dev/null || true
+# Sicherungskopie von seen_jobs.json anlegen
+if [ -f "data/seen_jobs.json" ]; then
+  cp data/seen_jobs.json /tmp/seen_jobs_backup.json
+fi
+git fetch origin main --quiet
+git reset --hard origin/main --quiet
+# seen_jobs.json wiederherstellen (lokale Version hat Vorrang)
+if [ -f "/tmp/seen_jobs_backup.json" ]; then
+  cp /tmp/seen_jobs_backup.json data/seen_jobs.json
+fi
 
 # Virtuelle Umgebung erstellen (einmalig)
 if [ ! -d ".venv" ]; then

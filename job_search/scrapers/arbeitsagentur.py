@@ -50,7 +50,10 @@ class ArbeitsagenturScraper(BaseScraper):
                     timeout=20,
                 )
                 if not resp.ok:
-                    logger.error("Arbeitsagentur %d für '%s'", resp.status_code, query)
+                    logger.error(
+                        "Arbeitsagentur %d für '%s' – %s",
+                        resp.status_code, query, resp.text[:300],
+                    )
                     continue
 
                 for offer in resp.json().get("stellenangebote") or []:
