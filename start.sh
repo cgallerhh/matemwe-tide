@@ -20,6 +20,10 @@ if [ ! -f ".env" ]; then
   exit 1
 fi
 
+# Neueste Version holen
+echo "→ Hole neueste Version..."
+git pull --rebase origin main
+
 # Virtuelle Umgebung erstellen (einmalig)
 if [ ! -d ".venv" ]; then
   echo "→ Erstelle virtuelle Python-Umgebung..."
