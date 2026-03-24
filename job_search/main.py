@@ -56,8 +56,13 @@ def main() -> None:
     seen = load_seen()
     location = PROFILE["location"]
 
+    # rest.arbeitsagentur.de is blocked at network level for GitHub Actions IPs.
+    # Run Arbeitsagentur only when executed locally (CI env var is not set).
+    in_ci = os.environ.get("CI", "").lower() == "true"
+    if in_ci:
+        logger.info("CI detected – skipping Arbeitsagentur (rest.arbeitsagentur.de blocked by IP)")
     scrapers = [
-        ArbeitsagenturScraper(),
+        *([] if in_ci else [ArbeitsagenturScraper()]),
         IndeedScraper(),
         LinkedInScraper(),
         StepStoneScraper(),
