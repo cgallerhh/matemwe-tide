@@ -56,16 +56,18 @@ def main() -> None:
     seen = load_seen()
     location = PROFILE["location"]
 
-    # rest.arbeitsagentur.de is blocked at network level for GitHub Actions IPs.
-    # Run Arbeitsagentur only when executed locally (CI env var is not set).
+    # GitHub Actions IPs are blocked or return HTML (bot-detection) for several
+    # job boards. Only LinkedIn works reliably from CI.
+    # Arbeitsagentur, Indeed, StepStone run locally where IPs are not flagged.
     in_ci = os.environ.get("CI", "").lower() == "true"
     if in_ci:
-        logger.info("CI detected – skipping Arbeitsagentur (rest.arbeitsagentur.de blocked by IP)")
+        logger.info(
+            "CI detected – running LinkedIn only "
+            "(Arbeitsagentur/Indeed/StepStone blocked by IP or bot-detection)"
+        )
     scrapers = [
-        *([] if in_ci else [ArbeitsagenturScraper()]),
-        IndeedScraper(),
         LinkedInScraper(),
-        StepStoneScraper(),
+        *([] if in_ci else [ArbeitsagenturScraper(), IndeedScraper(), StepStoneScraper()]),
     ]
 
     raw_jobs: List[dict] = []

@@ -56,8 +56,11 @@ class StepStoneScraper(BaseScraper):
                     timeout=15,
                 )
                 feed = feedparser.parse(resp.text)
-                if feed.bozo and feed.entries == []:
-                    logger.warning("StepStone RSS parse issue for '%s': %s", query, feed.bozo_exception)
+                if feed.bozo and not feed.entries:
+                    logger.warning(
+                        "StepStone RSS blocked/unreadable for '%s' (HTTP %s, starts: %s…)",
+                        query, resp.status_code, resp.text[:80].replace("\n", " "),
+                    )
                     continue
                 for entry in feed.entries[:MAX_JOBS_PER_QUERY]:
                     link = entry.get("link", "")
