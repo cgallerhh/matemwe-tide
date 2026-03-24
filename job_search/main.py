@@ -15,6 +15,7 @@ from .config import PROFILE, SEARCH_QUERIES
 from .emailer import build_html, send_email
 from .filter import is_relevant, score_job
 from .scrapers.arbeitsagentur import ArbeitsagenturScraper
+from .scrapers.gkv_careers import GKVCareersScraper
 from .scrapers.indeed import IndeedScraper
 from .scrapers.linkedin import LinkedInScraper
 from .scrapers.stepstone import StepStoneScraper
@@ -56,18 +57,12 @@ def main() -> None:
     seen = load_seen()
     location = PROFILE["location"]
 
-    # GitHub Actions IPs are blocked or return HTML (bot-detection) for several
-    # job boards. Only LinkedIn works reliably from CI.
-    # Arbeitsagentur, Indeed, StepStone run locally where IPs are not flagged.
-    in_ci = os.environ.get("CI", "").lower() == "true"
-    if in_ci:
-        logger.info(
-            "CI detected – running LinkedIn only "
-            "(Arbeitsagentur/Indeed/StepStone blocked by IP or bot-detection)"
-        )
     scrapers = [
+        ArbeitsagenturScraper(),
+        IndeedScraper(),
         LinkedInScraper(),
-        *([] if in_ci else [ArbeitsagenturScraper(), IndeedScraper(), StepStoneScraper()]),
+        StepStoneScraper(),
+        GKVCareersScraper(),
     ]
 
     raw_jobs: List[dict] = []
