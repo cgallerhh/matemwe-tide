@@ -45,7 +45,7 @@ class ArbeitsagenturScraper(BaseScraper):
                         "umkreis": "50",
                         "veroeffentlichtseit": "3",
                         "size": str(MAX_JOBS_PER_QUERY),
-                        "page": "0",
+                        "page": "1",
                     },
                     timeout=20,
                 )
