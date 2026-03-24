@@ -53,5 +53,5 @@ jobs:
           git diff --staged --quiet && echo "No changes to seen_jobs.json" || \
             git commit -m "chore: update seen_jobs [skip ci]"
           # Pull first to avoid push conflicts
-          git pull --rebase origin claude/job-search-automation-cfxxV || true
+          git pull --rebase origin main || true
           git push origin HEAD || true
