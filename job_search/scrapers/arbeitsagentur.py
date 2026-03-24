@@ -1,122 +1,76 @@
 """
-Bundesagentur für Arbeit – offizielle, öffentliche REST-API.
-OAuth2 Client Credentials Flow (kein Secret erforderlich).
+Bundesagentur für Arbeit – RSS-Feed der öffentlichen Jobbörse.
 
-Dokumentation: https://jobsuche.api.bund.dev/
+Der OAuth-REST-Endpoint (rest.arbeitsagentur.de/oauth/token) ist von
+GitHub Actions IPs per WAF gesperrt (403). Stattdessen wird der öffentliche
+RSS-Feed der Jobbörse genutzt, der auf einer anderen Infrastruktur läuft.
+
+Feed-URL: https://jobboerse.arbeitsagentur.de/vamJB/sucheAusgabe.html
+          ?aa=1&m=1&beruf={query}&arbeitsort={location}&umkreis=50
+          &veroeffentlichtseit=3&format=rss
 """
+import hashlib
 import logging
 import time
-from typing import Dict, List, Optional
+from typing import Dict, List
+from urllib.parse import quote_plus
 
-import requests
+import feedparser
 
 from ..config import MAX_JOBS_PER_QUERY
 from .base import BaseScraper
 
 logger = logging.getLogger(__name__)
 
-TOKEN_URL = "https://rest.arbeitsagentur.de/oauth/token"
-BASE_URL  = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs"
-CLIENT_ID = "jobboerse-jobsuche"
+RSS_BASE = "https://jobboerse.arbeitsagentur.de/vamJB/sucheAusgabe.html"
 
 
 class ArbeitsagenturScraper(BaseScraper):
     SOURCE_NAME = "Arbeitsagentur"
     POLITE_DELAY = 1.0
 
-    def __init__(self) -> None:
-        super().__init__()
-        self._token: Optional[str] = None
-
-    def _get_token(self) -> str:
-        # Use a plain requests.post (not the browser-like session) so the WAF
-        # on rest.arbeitsagentur.de doesn't reject the OAuth request with 403.
-        resp = requests.post(
-            TOKEN_URL,
-            data={"grant_type": "client_credentials", "client_id": CLIENT_ID},
-            headers={
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Accept": "application/json",
-            },
-            timeout=15,
-        )
-        resp.raise_for_status()
-        token = resp.json().get("access_token", "")
-        logger.info("Arbeitsagentur: OAuth token obtained (%d chars)", len(token))
-        return token
-
-    def _search(self, params: dict) -> dict:
-        """Run a single search request with auth header, log body on error."""
-        resp = self.session.get(
-            BASE_URL,
-            params=params,
-            headers={
-                "Authorization": f"Bearer {self._token}",
-                "Accept": "application/json",
-            },
-            timeout=20,
-        )
-        if not resp.ok:
-            logger.error(
-                "Arbeitsagentur API %d – body: %s", resp.status_code, resp.text[:300]
-            )
-            resp.raise_for_status()
-        return resp.json()
-
     def fetch(self, queries: List[str], location: str) -> List[Dict]:
         seen: set = set()
         jobs: List[Dict] = []
 
-        try:
-            self._token = self._get_token()
-        except Exception as exc:
-            logger.error("Arbeitsagentur: token fetch failed: %s", exc)
-            return []
-
         for query in queries:
             try:
-                # BA API: use only essential params to avoid 400
-                params = {
-                    "was": query,
-                    "wo": location,
-                    "umkreis": "50",
-                    "veroeffentlichtseit": "3",
-                    "size": str(MAX_JOBS_PER_QUERY),
-                    "page": "0",
-                }
-                data = self._search(params)
-
-                for offer in data.get("stellenangebote") or []:
-                    ref = offer.get("refnr", "")
-                    job_id = ref or f"{offer.get('titel','')}{offer.get('arbeitgeber','')}"
-
+                url = (
+                    f"{RSS_BASE}"
+                    f"?aa=1&m=1"
+                    f"&beruf={quote_plus(query)}"
+                    f"&arbeitsort={quote_plus(location)}"
+                    f"&umkreis=50"
+                    f"&veroeffentlichtseit=3"
+                    f"&format=rss"
+                )
+                feed = feedparser.parse(url)
+                for entry in feed.entries[:MAX_JOBS_PER_QUERY]:
+                    link = entry.get("link", "")
+                    job_id = (
+                        hashlib.md5(link.encode()).hexdigest()
+                        if link
+                        else hashlib.md5(entry.get("title", "").encode()).hexdigest()
+                    )
                     if job_id in seen:
                         continue
                     seen.add(job_id)
-
-                    url = offer.get("externeUrl") or (
-                        f"https://www.arbeitsagentur.de/jobsuche/jobdetail/{ref}"
-                        if ref else ""
-                    )
-                    arbeitsort = offer.get("arbeitsort", {})
-                    job_location = ", ".join(
-                        filter(None, [arbeitsort.get("ort"), arbeitsort.get("region")])
-                    ) or location
-
+                    company = (
+                        entry.get("dc_creator", "")
+                        or entry.get("author", "")
+                    ).strip()
                     jobs.append({
                         "id": job_id,
-                        "title": offer.get("titel", "").strip(),
-                        "company": offer.get("arbeitgeber", "").strip(),
-                        "location": job_location,
-                        "url": url,
-                        "description": (offer.get("stellenbeschreibung") or "")[:500].strip(),
-                        "posted_date": offer.get("aktuelleVeroeffentlichungsdatum", ""),
+                        "title": entry.get("title", "").strip(),
+                        "company": company,
+                        "location": location,
+                        "url": link,
+                        "description": entry.get("summary", "")[:500].strip(),
+                        "posted_date": entry.get("published", ""),
                         "source": self.SOURCE_NAME,
                     })
-
             except Exception as exc:
                 logger.error("Arbeitsagentur query '%s' failed: %s", query, exc)
-
             time.sleep(self.POLITE_DELAY)
 
         logger.info("Arbeitsagentur: %d jobs collected", len(jobs))
