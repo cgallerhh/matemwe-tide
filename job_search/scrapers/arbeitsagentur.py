@@ -45,7 +45,10 @@ class ArbeitsagenturScraper(BaseScraper):
         resp = self.session.get(
             BASE_URL,
             params=params,
-            headers={"Authorization": f"Bearer {self._token}"},
+            headers={
+                "Authorization": f"Bearer {self._token}",
+                "Accept": "application/json",
+            },
             timeout=20,
         )
         if not resp.ok:
