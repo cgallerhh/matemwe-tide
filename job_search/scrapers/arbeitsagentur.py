@@ -37,7 +37,7 @@ class ArbeitsagenturScraper(BaseScraper):
                         "size": str(MAX_JOBS_PER_QUERY),
                         "page": "0",
                     },
-                    headers={"X-API-Key": API_KEY},
+                    headers={"X-API-Key": API_KEY, "Accept": "application/json"},
                     timeout=20,
                 )
                 if not resp.ok:

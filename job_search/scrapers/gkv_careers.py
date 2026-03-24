@@ -54,7 +54,7 @@ GKV_CAREER_PAGES: List[Tuple[str, str]] = [
     ("Salus BKK", "https://www.salus-bkk.de/karriere"),
     ("R+V BKK", "https://www.ruv-bkk.de/karriere"),
     ("BKK Gildemeister Seidensticker", "https://www.bkkgs.de/karriere"),
-    ("BKK Pfalz", "https://www.bkk-pfalz.de/karriere"),
+    ("BKK Pfalz", "https://www.bkkpfalz.de/unternehmen/karriere"),
 ]
 
 # URL/text patterns that indicate a link leads to a job listings sub-page
