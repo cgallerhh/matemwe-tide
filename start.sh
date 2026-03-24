@@ -20,9 +20,11 @@ if [ ! -f ".env" ]; then
   exit 1
 fi
 
-# Neueste Version holen
+# Neueste Version holen (lokale Änderungen z.B. seen_jobs.json kurz zwischenspeichern)
 echo "→ Hole neueste Version..."
+git stash --quiet
 git pull --rebase origin main
+git stash pop --quiet 2>/dev/null || true
 
 # Virtuelle Umgebung erstellen (einmalig)
 if [ ! -d ".venv" ]; then
