@@ -15,9 +15,9 @@
 ## Stark bevorzugt
 - Ausschreibungs-/Vergabe-Kompetenz gefragt (BID, Tender, Vergabe)
 - IT-Consulting oder IT-Dienstleistungsunternehmen
-- Bekannte Anbieter im GKV-IT-Umfeld: adesso, CGI, IBM, T-Systems, Sopra Steria,
+- Bekannte Anbieter im GKV-IT-Umfeld: CGI, IBM, T-Systems, Sopra Steria,
   Atruvia, msg, Capgemini, Deloitte, PwC, KPMG
-- eHealth / Telematikinfrastruktur / DigiG / KRITIS
+- eHealth / Telematikinfrastruktur / DigiG / KRITIS / B3 / KI / GEnAI / Prozessautomatisierung
 
 ## Akzeptables Umfeld (nice to have)
 - Breiter Public Sector (Behörden, ÖGD) ohne direkten GKV-Bezug
@@ -27,6 +27,7 @@
 ## Nicht interessant
 - Reine Außendienst-Stellen ohne strategische Komponente
 - Junior-Level oder Trainee-Programme
-- Zeitarbeit / Leiharbeit
+- Zeitarbeit / Leiharbeit / ANÜ
 - Medizinische / pflegerische Berufe
 - Branchen ohne IT-Bezug
+- Branchen mit "Leistungserbringer-Bezug" und Hersteller von KIS, LIS, RIS 
