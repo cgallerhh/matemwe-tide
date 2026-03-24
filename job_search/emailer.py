@@ -178,8 +178,13 @@ def build_html(jobs: List[Dict], name: str) -> str:
 
 def send_email(to: str, subject: str, html: str) -> None:
     """Send HTML email via Gmail SMTP SSL (port 465)."""
-    user = os.environ["GMAIL_USER"]
-    password = os.environ["GMAIL_APP_PASSWORD"]
+    user = os.environ.get("GMAIL_USER", "")
+    password = os.environ.get("GMAIL_APP_PASSWORD", "")
+    if not user or not password:
+        raise RuntimeError(
+            "GMAIL_USER and GMAIL_APP_PASSWORD must be set as GitHub Secrets. "
+            "Use a Google App Password (not your regular password)."
+        )
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject

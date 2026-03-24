@@ -96,7 +96,12 @@ def score_jobs_with_ai(jobs: List[Dict]) -> List[Dict]:
                 messages=[{"role": "user", "content": job_text}],
             )
 
-            raw = response.content[0].text.strip()
+            raw = response.content[0].text.strip() if response.content else ""
+            if not raw:
+                raise ValueError("Empty response from model")
+            # Strip markdown code fences if model wraps JSON in ```json ... ```
+            if raw.startswith("```"):
+                raw = raw.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
             result = json.loads(raw)
             ai_score = max(0, min(100, int(result.get("score", 0))))
             ai_reason = result.get("reason", "")
