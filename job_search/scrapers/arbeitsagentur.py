@@ -29,7 +29,7 @@ class ArbeitsagenturScraper(BaseScraper):
         self._token: Optional[str] = None
 
     def _get_token(self) -> str:
-        resp = requests.post(
+        resp = self.session.post(
             TOKEN_URL,
             data={"grant_type": "client_credentials", "client_id": CLIENT_ID},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
