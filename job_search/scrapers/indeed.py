@@ -1,6 +1,9 @@
 """
 Indeed scraper – RSS-Feed via feedparser.
-Der HTML-Fallback wurde entfernt, da de.indeed.com aus Cloud-IPs 403 zurückgibt.
+
+feedparser.parse(url) nutzt intern urllib ohne Browser-Headers – Indeed blockt
+das lautlos (0 Ergebnisse). Fix: zuerst mit der Browser-Session fetchen,
+dann den Response-Text an feedparser übergeben.
 """
 import hashlib
 import logging
@@ -37,17 +40,23 @@ class IndeedScraper(BaseScraper):
             params = {
                 "q": query,
                 "l": location,
-                "radius": "50",
                 "sort": "date",
                 "fromage": "3",
                 "format": "rss",
-                "lang": "de",
-                "limit": str(MAX_JOBS_PER_QUERY),
             }
             url = f"{RSS_URL}?{urlencode(params)}"
-            feed = feedparser.parse(url)
+            # Fetch with browser session so Indeed doesn't block the request
+            resp = self.session.get(
+                url,
+                headers={"Accept": "application/rss+xml, application/xml, */*"},
+                timeout=15,
+            )
+            feed = feedparser.parse(resp.text)
+            if feed.bozo and feed.entries == []:
+                logger.warning("Indeed RSS parse issue for '%s': %s", query, feed.bozo_exception)
+                return []
             jobs = []
-            for entry in feed.entries:
+            for entry in feed.entries[:MAX_JOBS_PER_QUERY]:
                 link = entry.get("link", "")
                 job_id = hashlib.md5(link.encode()).hexdigest()
                 if job_id in seen:

@@ -1,6 +1,9 @@
 """
 StepStone scraper – RSS-Feed via feedparser.
-HTML-Scraping wurde ersetzt, da stepstone.de aus Cloud-IPs timeoutet.
+
+feedparser.parse(url) nutzt intern urllib ohne Browser-Headers – StepStone
+blockt das lautlos. Fix: zuerst mit der Browser-Session fetchen,
+dann den Response-Text an feedparser übergeben.
 """
 import hashlib
 import logging
@@ -46,7 +49,16 @@ class StepStoneScraper(BaseScraper):
                     f"--{_slug(query)}"
                     f"--in-{_slug(location)}-.html?rss=1"
                 )
-                feed = feedparser.parse(url)
+                # Fetch with browser session so StepStone doesn't block the request
+                resp = self.session.get(
+                    url,
+                    headers={"Accept": "application/rss+xml, application/xml, */*"},
+                    timeout=15,
+                )
+                feed = feedparser.parse(resp.text)
+                if feed.bozo and feed.entries == []:
+                    logger.warning("StepStone RSS parse issue for '%s': %s", query, feed.bozo_exception)
+                    continue
                 for entry in feed.entries[:MAX_JOBS_PER_QUERY]:
                     link = entry.get("link", "")
                     job_id = (
