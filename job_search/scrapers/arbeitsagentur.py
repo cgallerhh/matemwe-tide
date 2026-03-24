@@ -21,13 +21,23 @@ class ArbeitsagenturScraper(BaseScraper):
     SOURCE_NAME = "Arbeitsagentur"
     POLITE_DELAY = 1.0
 
+    def __init__(self) -> None:
+        super().__init__()
+        # Use a clean session with only API-compatible headers (no browser-specific headers)
+        import requests as _req
+        self._api_session = _req.Session()
+        self._api_session.headers.update({
+            "X-API-Key": API_KEY,
+            "Accept": "application/json",
+        })
+
     def fetch(self, queries: List[str], location: str) -> List[Dict]:
         seen: set = set()
         jobs: List[Dict] = []
 
         for query in queries:
             try:
-                resp = self.session.get(
+                resp = self._api_session.get(
                     BASE_URL,
                     params={
                         "was": query,
@@ -37,7 +47,6 @@ class ArbeitsagenturScraper(BaseScraper):
                         "size": str(MAX_JOBS_PER_QUERY),
                         "page": "0",
                     },
-                    headers={"X-API-Key": API_KEY, "Accept": "application/json"},
                     timeout=20,
                 )
                 if not resp.ok:
