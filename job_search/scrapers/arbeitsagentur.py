@@ -1,11 +1,12 @@
 """
-Bundesagentur für Arbeit – offizielle REST-API.
-OAuth2 Client Credentials Flow (kein Secret erforderlich).
+Bundesagentur für Arbeit – Mobile-App REST-API.
 
-Der Token-Endpoint prüft Origin/Referer via WAF. Wir senden dieselben
-Headers wie der Browser auf www.arbeitsagentur.de/jobsuche/.
+Verwendet den App-Endpoint (gettoken_cc) mit den öffentlich dokumentierten
+App-Credentials aus der offiziellen BA-Jobbörse-App.
+Doku: https://jobsuche.api.bund.dev/
 
-Dokumentation: https://jobsuche.api.bund.dev/
+Token-Endpoint: /oauth/gettoken_cc  (nicht /oauth/token – der ist IP-geblockt)
+API-Pfad:       /pc/v4/app/jobs     (nicht /pc/v4/jobs)
 """
 import logging
 import time
@@ -18,9 +19,10 @@ from .base import BaseScraper
 
 logger = logging.getLogger(__name__)
 
-TOKEN_URL = "https://rest.arbeitsagentur.de/oauth/token"
-BASE_URL  = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs"
-CLIENT_ID = "jobboerse-jobsuche"
+TOKEN_URL  = "https://rest.arbeitsagentur.de/oauth/gettoken_cc"
+BASE_URL   = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/app/jobs"
+CLIENT_ID  = "c003a37f-024f-462a-b36d-b001de4d57"
+CLIENT_SEC = "32a39620-7248-462b-985a-d7a857e411f9"
 
 
 class ArbeitsagenturScraper(BaseScraper):
@@ -32,27 +34,19 @@ class ArbeitsagenturScraper(BaseScraper):
         self._token: Optional[str] = None
 
     def _get_token(self) -> str:
-        # Mimic the headers the Arbeitsagentur web frontend sends when it
-        # fetches the OAuth token – the WAF checks Origin/Referer.
         resp = requests.post(
             TOKEN_URL,
-            data={"grant_type": "client_credentials", "client_id": CLIENT_ID},
-            headers={
-                "Content-Type": "application/x-www-form-urlencoded",
-                "Accept": "application/json",
-                "Origin": "https://www.arbeitsagentur.de",
-                "Referer": "https://www.arbeitsagentur.de/",
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/122.0.0.0 Safari/537.36"
-                ),
+            data={
+                "grant_type": "client_credentials",
+                "client_id": CLIENT_ID,
+                "client_secret": CLIENT_SEC,
             },
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=15,
         )
         resp.raise_for_status()
         token = resp.json().get("access_token", "")
-        logger.info("Arbeitsagentur: OAuth token obtained (%d chars)", len(token))
+        logger.info("Arbeitsagentur: token obtained (%d chars)", len(token))
         return token
 
     def _search(self, params: dict) -> dict:
@@ -85,12 +79,12 @@ class ArbeitsagenturScraper(BaseScraper):
         for query in queries:
             try:
                 params = {
+                    "angebotsart": "1",
                     "was": query,
                     "wo": location,
                     "umkreis": "50",
-                    "veroeffentlichtseit": "3",
-                    "size": str(MAX_JOBS_PER_QUERY),
                     "page": "0",
+                    "size": str(MAX_JOBS_PER_QUERY),
                 }
                 data = self._search(params)
 
