@@ -19,6 +19,7 @@ from .ai_scorer import score_jobs_with_ai
 from .config import PROFILE, SEARCH_QUERIES
 from .emailer import build_html, send_email
 from .filter import is_relevant, score_job
+from .scrapers.arbeitsagentur import ArbeitsagenturScraper
 from .scrapers.gkv_careers import GKVCareersScraper
 from .scrapers.linkedin import LinkedInScraper
 
@@ -60,6 +61,7 @@ def main() -> None:
     location = PROFILE["location"]
 
     scrapers = [
+        ArbeitsagenturScraper(),
         LinkedInScraper(),
         GKVCareersScraper(),
     ]
