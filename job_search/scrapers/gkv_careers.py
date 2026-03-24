@@ -99,7 +99,9 @@ class GKVCareersScraper(BaseScraper):
         sub_url = self._find_jobs_subpage(soup, url)
         if sub_url:
             resp2 = self.get(sub_url)
-            soup2 = BeautifulSoup(resp2.text, "lxml")
+            ct = resp2.headers.get("content-type", "")
+            parser = "xml" if "xml" in ct else "lxml"
+            soup2 = BeautifulSoup(resp2.text, parser)
             jobs = self._from_jsonld(soup2, sub_url, company)
             if jobs:
                 return jobs

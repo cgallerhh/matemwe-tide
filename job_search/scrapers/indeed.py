@@ -1,9 +1,8 @@
 """
 Indeed scraper – RSS-Feed via feedparser.
 
-feedparser.parse(url) nutzt intern urllib ohne Browser-Headers – Indeed blockt
-das lautlos (0 Ergebnisse). Fix: zuerst mit der Browser-Session fetchen,
-dann den Response-Text an feedparser übergeben.
+Indeed setzt Session-Cookies beim ersten Besuch. Ohne diese Cookies blockt
+Cloudflare den RSS-Request. Fix: Homepage zuerst besuchen, dann RSS fetchen.
 """
 import hashlib
 import logging
@@ -18,13 +17,26 @@ from .base import BaseScraper
 
 logger = logging.getLogger(__name__)
 
-RSS_URL = "https://de.indeed.com/jobs"
+BASE_URL = "https://de.indeed.com"
+RSS_URL  = f"{BASE_URL}/jobs"
 
 
 class IndeedScraper(BaseScraper):
     SOURCE_NAME = "Indeed"
+    _warmed_up: bool = False
+
+    def _warmup(self) -> None:
+        """Visit homepage once to obtain session cookies."""
+        if self._warmed_up:
+            return
+        try:
+            self.session.get(BASE_URL, timeout=10)
+            self._warmed_up = True
+        except Exception:
+            pass
 
     def fetch(self, queries: List[str], location: str) -> List[Dict]:
+        self._warmup()
         seen: set = set()
         jobs: List[Dict] = []
 
@@ -45,18 +57,17 @@ class IndeedScraper(BaseScraper):
                 "format": "rss",
             }
             url = f"{RSS_URL}?{urlencode(params)}"
-            # Fetch with browser session so Indeed doesn't block the request
             resp = self.session.get(
                 url,
                 headers={"Accept": "application/rss+xml, application/xml, */*"},
                 timeout=15,
             )
+            if resp.status_code != 200:
+                logger.warning("Indeed: HTTP %s for '%s'", resp.status_code, query)
+                return []
             feed = feedparser.parse(resp.text)
             if feed.bozo and not feed.entries:
-                logger.warning(
-                    "Indeed RSS blocked/unreadable for '%s' (HTTP %s, starts: %s…)",
-                    query, resp.status_code, resp.text[:80].replace("\n", " "),
-                )
+                logger.warning("Indeed RSS parse error for '%s': %s", query, feed.bozo_exception)
                 return []
             jobs = []
             for entry in feed.entries[:MAX_JOBS_PER_QUERY]:

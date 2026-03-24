@@ -1,12 +1,8 @@
 """
-Bundesagentur für Arbeit – Mobile-App REST-API.
+Bundesagentur für Arbeit – offizielle REST-API.
+OAuth2 Client Credentials Flow mit dem Web-Client (kein Secret nötig).
 
-Verwendet den App-Endpoint (gettoken_cc) mit den öffentlich dokumentierten
-App-Credentials aus der offiziellen BA-Jobbörse-App.
-Doku: https://jobsuche.api.bund.dev/
-
-Token-Endpoint: /oauth/gettoken_cc  (nicht /oauth/token – der ist IP-geblockt)
-API-Pfad:       /pc/v4/app/jobs     (nicht /pc/v4/jobs)
+Dokumentation: https://jobsuche.api.bund.dev/
 """
 import logging
 import time
@@ -19,10 +15,9 @@ from .base import BaseScraper
 
 logger = logging.getLogger(__name__)
 
-TOKEN_URL  = "https://rest.arbeitsagentur.de/oauth/gettoken_cc"
-BASE_URL   = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/app/jobs"
-CLIENT_ID  = "c003a37f-024f-462a-b36d-b001de4d57"
-CLIENT_SEC = "32a39620-7248-462b-985a-d7a857e411f9"
+TOKEN_URL = "https://rest.arbeitsagentur.de/oauth/token"
+BASE_URL  = "https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v4/jobs"
+CLIENT_ID = "jobboerse-jobsuche"
 
 
 class ArbeitsagenturScraper(BaseScraper):
@@ -36,11 +31,7 @@ class ArbeitsagenturScraper(BaseScraper):
     def _get_token(self) -> str:
         resp = requests.post(
             TOKEN_URL,
-            data={
-                "grant_type": "client_credentials",
-                "client_id": CLIENT_ID,
-                "client_secret": CLIENT_SEC,
-            },
+            data={"grant_type": "client_credentials", "client_id": CLIENT_ID},
             headers={"Content-Type": "application/x-www-form-urlencoded"},
             timeout=15,
         )
@@ -79,12 +70,12 @@ class ArbeitsagenturScraper(BaseScraper):
         for query in queries:
             try:
                 params = {
-                    "angebotsart": "1",
                     "was": query,
                     "wo": location,
                     "umkreis": "50",
-                    "page": "0",
+                    "veroeffentlichtseit": "3",
                     "size": str(MAX_JOBS_PER_QUERY),
+                    "page": "0",
                 }
                 data = self._search(params)
 
