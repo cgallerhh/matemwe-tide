@@ -25,21 +25,23 @@ logger = logging.getLogger(__name__)
 
 IT_CAREER_PAGES: List[Tuple[str, str]] = [
     # Tier 1 – GKV-Kerndienstleister
+    # Arvato: JSON-LD auf der Karriereseite vorhanden
     ("Arvato Systems",  "https://www.arvato-systems.de/karriere"),
-    ("BITMARCK",        "https://karriere.bitmarck.de/stellenangebote"),
+    # BITMARCK: Root-Seite, nicht /stellenangebote (404)
+    ("BITMARCK",        "https://karriere.bitmarck.de/"),
+    # ITSC: kleines Haus, einfaches HTML
     ("ITSC GmbH",       "https://www.itsc.de/karriere"),
-    ("msg systems",     "https://www.msg.group/de/karriere/aktuelle-stellenangebote"),
+    # msg: separater Job-Board auf jobs.msg.group (Hauptseite reagiert mit 406)
+    ("msg systems",     "https://jobs.msg.group/en/jobs"),
     # Tier 2 – IT-Beratung mit GKV-Unit
-    ("Sopra Steria",    "https://careers.soprasteria.de/jobs"),
-    ("Capgemini",       "https://www.capgemini.com/de-de/karriere"),
+    # CGI: njoyn-Portal mit strukturiertem HTML
     ("CGI",             "https://cgi.njoyn.com/corp/xweb/xweb.asp?page=joblisting&CLID=21001&CountryID=DE&lang=4"),
-    ("T-Systems",       "https://t-systems.jobs/globale-karriere-de"),
-    ("IBM Deutschland", "https://www.ibm.com/de-de/employment"),
+    # Dataport: öffentlicher IT-Dienstleister, einfaches HTML-Portal
     ("Dataport",        "https://karriere.dataport.de"),
+    # Sopra Steria: JSON-LD-Stellenseite
+    ("Sopra Steria",    "https://careers.soprasteria.de/jobs"),
     # Tier 4 – Spezialisten & Mittelständler
     ("_fbeta GmbH",     "https://fbeta.de/karriere/"),
-    ("asgard health",   "https://www.asgard-health.com/jobs"),
-    ("GKV SC GmbH",     "https://www.gkv-sc.de/karriere"),
 ]
 
 _JOB_SUBPAGE_PATTERNS = [
