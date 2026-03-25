@@ -70,6 +70,15 @@ def score_jobs_with_ai(jobs: List[Dict]) -> List[Dict]:
     if not api_key:
         logger.info("ANTHROPIC_API_KEY not set – keeping keyword scores")
         return jobs
+    if not api_key.isascii():
+        non_ascii = [(i, c, f"U+{ord(c):04X}") for i, c in enumerate(api_key) if ord(c) > 127]
+        logger.error(
+            "ANTHROPIC_API_KEY contains non-ASCII character(s) at position(s) %s "
+            "– likely a look-alike character (e.g., Cyrillic К instead of Latin K). "
+            "Re-copy the key from https://console.anthropic.com/settings/keys",
+            ", ".join(f"{i} ({cp})" for i, _, cp in non_ascii),
+        )
+        return jobs
 
     context = _load_context()
     if not context:
