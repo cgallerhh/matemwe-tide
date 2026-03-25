@@ -16,7 +16,7 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 from typing import List, Set
 
 from .ai_scorer import score_jobs_with_ai
-from .config import PROFILE, SEARCH_LOCATIONS, SEARCH_QUERIES
+from .config import EXTERNAL_QUERIES, GKV_QUERIES, PROFILE, SEARCH_LOCATIONS
 from .emailer import build_html, send_email
 from .filter import is_relevant, score_job
 from .scrapers.arbeitsagentur import ArbeitsagenturScraper
@@ -69,7 +69,7 @@ def main() -> None:
     for location in SEARCH_LOCATIONS:
         for scraper in location_aware:
             try:
-                jobs = scraper.fetch(SEARCH_QUERIES, location)
+                jobs = scraper.fetch(EXTERNAL_QUERIES, location)
                 logger.info("%s [%s] → %d jobs fetched", scraper.SOURCE_NAME, location, len(jobs))
                 raw_jobs.extend(jobs)
             except Exception as exc:
@@ -78,7 +78,7 @@ def main() -> None:
     # Run location-agnostic scrapers once
     for scraper in location_agnostic:
         try:
-            jobs = scraper.fetch(SEARCH_QUERIES, SEARCH_LOCATIONS[0])
+            jobs = scraper.fetch(GKV_QUERIES, SEARCH_LOCATIONS[0])
             logger.info("%s → %d jobs fetched", scraper.SOURCE_NAME, len(jobs))
             raw_jobs.extend(jobs)
         except Exception as exc:

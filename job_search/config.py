@@ -15,8 +15,9 @@ PROFILE = {
 # Locations to search – first entry = local, "Deutschland" = nationwide/remote
 SEARCH_LOCATIONS = ["Hamburg", "Deutschland"]
 
-# Search queries used on each job board
-SEARCH_QUERIES = [
+# Queries for external job boards (Arbeitsagentur, LinkedIn)
+# → suche nach Sales-/BD-Rollen bei IT-Unternehmen im GKV-Umfeld
+EXTERNAL_QUERIES = [
     "Senior Account Manager GKV",
     "Sales Manager Gesundheitswesen IT",
     "Key Account Manager Public Sector IT",
@@ -25,6 +26,29 @@ SEARCH_QUERIES = [
     "Senior Sales Manager Krankenkasse",
     "Account Manager IT Consulting Gesundheit",
 ]
+
+# Queries for GKV career pages (GKV Karriere scraper)
+# → suche nach internen Führungsrollen direkt bei Krankenkassen
+# Wird als Titelfilter verwendet (Job erscheint nur wenn mind. ein Begriff im Titel steckt)
+GKV_QUERIES = [
+    "Leiter",
+    "Head of",
+    "Manager",
+    "Director",
+    "CDO",
+    "Chief",
+    "Digitalisierung",
+    "eHealth",
+    "IT",
+    "Strategie",
+    "Vertrieb",
+    "Einkauf",
+    "Vergabe",
+    "Innovation",
+]
+
+# Backwards-compat alias used by existing imports
+SEARCH_QUERIES = EXTERNAL_QUERIES
 
 # Keywords that BOOST relevance score (keyword → points)
 POSITIVE_KEYWORDS = {

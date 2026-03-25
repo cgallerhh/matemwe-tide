@@ -71,7 +71,7 @@ class GKVCareersScraper(BaseScraper):
     POLITE_DELAY = 2.0
 
     def fetch(self, queries: List[str], location: str) -> List[Dict]:
-        """Scrape all GKV career pages. queries/location used for dedup only."""
+        """Scrape all GKV career pages and pre-filter by title keywords."""
         all_jobs: List[Dict] = []
         for company, url in GKV_CAREER_PAGES:
             try:
@@ -82,11 +82,18 @@ class GKVCareersScraper(BaseScraper):
             except Exception as exc:
                 logger.warning("GKV %s: %s", company, exc)
             time.sleep(self.POLITE_DELAY)
+
+        # Pre-filter: keep only jobs whose title contains at least one query keyword
+        q_lower = [q.lower() for q in queries]
+        filtered = [
+            j for j in all_jobs
+            if any(kw in j.get("title", "").lower() for kw in q_lower)
+        ]
         logger.info(
-            "GKV Karriere: %d jobs collected from %d portals",
-            len(all_jobs), len(GKV_CAREER_PAGES),
+            "GKV Karriere: %d jobs collected from %d portals → %d after title filter",
+            len(all_jobs), len(GKV_CAREER_PAGES), len(filtered),
         )
-        return all_jobs
+        return filtered
 
     # ── per-page scraping ────────────────────────────────────────────────────
 
