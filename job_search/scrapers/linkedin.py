@@ -33,9 +33,10 @@ class LinkedInScraper(BaseScraper):
 
         for query in queries:
             try:
+                li_location = "Germany" if location.lower() == "deutschland" else f"{location}, Germany"
                 params = {
                     "keywords": query,
-                    "location": f"{location}, Germany",
+                    "location": li_location,
                     "f_TPR": "r86400",  # posted in last 24h
                     "start": "0",
                     "count": str(MAX_JOBS_PER_QUERY),

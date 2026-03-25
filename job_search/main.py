@@ -16,7 +16,7 @@ load_dotenv(Path(__file__).resolve().parent.parent / ".env")
 from typing import List, Set
 
 from .ai_scorer import score_jobs_with_ai
-from .config import PROFILE, SEARCH_QUERIES
+from .config import PROFILE, SEARCH_LOCATIONS, SEARCH_QUERIES
 from .emailer import build_html, send_email
 from .filter import is_relevant, score_job
 from .scrapers.arbeitsagentur import ArbeitsagenturScraper
@@ -58,18 +58,27 @@ def main() -> None:
     logger.info("=== Job Search started – %s ===", datetime.now().strftime("%d.%m.%Y %H:%M"))
 
     seen = load_seen()
-    location = PROFILE["location"]
 
-    scrapers = [
-        ArbeitsagenturScraper(),
-        LinkedInScraper(),
-        GKVCareersScraper(),
-    ]
+    # GKV scraper is location-agnostic (scrapes all Krankenkassen pages directly)
+    location_aware = [ArbeitsagenturScraper(), LinkedInScraper()]
+    location_agnostic = [GKVCareersScraper()]
 
     raw_jobs: List[dict] = []
-    for scraper in scrapers:
+
+    # Run location-aware scrapers for each configured search location
+    for location in SEARCH_LOCATIONS:
+        for scraper in location_aware:
+            try:
+                jobs = scraper.fetch(SEARCH_QUERIES, location)
+                logger.info("%s [%s] → %d jobs fetched", scraper.SOURCE_NAME, location, len(jobs))
+                raw_jobs.extend(jobs)
+            except Exception as exc:
+                logger.error("%s [%s] scraper failed: %s", scraper.SOURCE_NAME, location, exc)
+
+    # Run location-agnostic scrapers once
+    for scraper in location_agnostic:
         try:
-            jobs = scraper.fetch(SEARCH_QUERIES, location)
+            jobs = scraper.fetch(SEARCH_QUERIES, SEARCH_LOCATIONS[0])
             logger.info("%s → %d jobs fetched", scraper.SOURCE_NAME, len(jobs))
             raw_jobs.extend(jobs)
         except Exception as exc:

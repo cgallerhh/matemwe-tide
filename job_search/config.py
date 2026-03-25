@@ -12,6 +12,9 @@ PROFILE = {
     "salary_min": 90000,
 }
 
+# Locations to search – first entry = local, "Deutschland" = nationwide/remote
+SEARCH_LOCATIONS = ["Hamburg", "Deutschland"]
+
 # Search queries used on each job board
 SEARCH_QUERIES = [
     "Senior Account Manager GKV",

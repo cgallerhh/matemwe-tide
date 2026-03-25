@@ -37,16 +37,16 @@ class ArbeitsagenturScraper(BaseScraper):
 
         for query in queries:
             try:
-                resp = self._api_session.get(
-                    BASE_URL,
-                    params={
-                        "was": query,
-                        "wo": location,
-                        "umkreis": "50",
-                        "veroeffentlichtseit": "3",
-                        "size": str(MAX_JOBS_PER_QUERY),
-                        "page": "1",
-                    },
+                params: dict = {
+                    "was": query,
+                    "veroeffentlichtseit": "3",
+                    "size": str(MAX_JOBS_PER_QUERY),
+                    "page": "1",
+                }
+                if location.lower() != "deutschland":
+                    params["wo"] = location
+                    params["umkreis"] = "50"
+                resp = self._api_session.get(BASE_URL, params=params,
                     timeout=20,
                 )
                 if not resp.ok:
