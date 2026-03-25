@@ -12,9 +12,12 @@ from typing import Dict, List
 logger = logging.getLogger(__name__)
 
 SOURCE_COLORS = {
-    "Indeed": "#2557a7",
-    "StepStone": "#e8620b",
-    "LinkedIn": "#0077b5",
+    "Arbeitsagentur":   "#005b99",
+    "GKV Karriere":     "#0f766e",
+    "IT Dienstleister": "#7c3aed",
+    "LinkedIn":         "#0077b5",
+    "Indeed":           "#2557a7",
+    "StepStone":        "#e8620b",
 }
 
 

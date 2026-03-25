@@ -12,7 +12,10 @@ PROFILE = {
     "salary_min": 90000,
 }
 
-# Search queries used on each job board
+# Locations to search – first entry = local, "Deutschland" = nationwide/remote
+SEARCH_LOCATIONS = ["Hamburg", "Deutschland"]
+
+# Queries for external job boards (Arbeitsagentur, LinkedIn, Indeed, StepStone)
 SEARCH_QUERIES = [
     "Senior Account Manager GKV",
     "Sales Manager Gesundheitswesen IT",
@@ -21,6 +24,49 @@ SEARCH_QUERIES = [
     "Account Executive eHealth",
     "Senior Sales Manager Krankenkasse",
     "Account Manager IT Consulting Gesundheit",
+]
+
+# Aliases
+EXTERNAL_QUERIES = SEARCH_QUERIES
+
+# Queries for GKV career pages (GKV Karriere scraper)
+# → suche nach internen Führungsrollen direkt bei Krankenkassen
+# Wird als Titelfilter verwendet (Job erscheint nur wenn mind. ein Begriff im Titel steckt)
+GKV_QUERIES = [
+    "Leiter",
+    "Head of",
+    "Manager",
+    "Director",
+    "CDO",
+    "Chief",
+    "Digitalisierung",
+    "eHealth",
+    "IT",
+    "Strategie",
+    "Vertrieb",
+    "Einkauf",
+    "Vergabe",
+    "Innovation",
+]
+
+# Queries für IT-Dienstleister-Karriereseiten (Titelfilter, kürzere Begriffe)
+# → breiter als SEARCH_QUERIES, da Stellentitel bei Dienstleistern selten "GKV" enthalten
+IT_DIENSTLEISTER_QUERIES = [
+    "Account Manager",
+    "Sales Manager",
+    "Key Account",
+    "Business Development",
+    "Vertrieb",
+    "Manager",
+    "Director",
+    "Head of",
+    "Consulting",
+    "Consultant",
+    "Healthcare",
+    "Gesundheit",
+    "eHealth",
+    "GKV",
+    "Public Sector",
 ]
 
 # Keywords that BOOST relevance score (keyword → points)
@@ -87,6 +133,57 @@ POSITIVE_KEYWORDS = {
     "Remote": 5,
     "Hybrid": 5,
     "Homeoffice": 5,
+    # GKV internal leadership roles – Digitalisierung & Transformation
+    "Chief Digital Officer": 22,
+    "CDO": 15,
+    "Leiter Digital": 22,
+    "Bereichsleiter Digital": 22,
+    "Head of Digital": 22,
+    "Leiter E-Health": 22,
+    "Leiter eHealth": 22,
+    "Leiter Unternehmensentwicklung": 20,
+    "Leiter Innovation": 20,
+    "Head of Customer Experience": 20,
+    # GKV internal leadership roles – IT-Strategie & IT-Steuerung
+    "Leiter IT-Strategie": 22,
+    "Head of IT Strategy": 22,
+    "Leiter IT-Steuerung": 22,
+    "Head of IT Governance": 22,
+    "IT-Portfolio": 18,
+    "IT Portfolio": 18,
+    "IT-Programmleiter": 20,
+    "Demand Management IT": 18,
+    "Head of Cloud Transformation": 20,
+    "Leiter Anwendungsstrategie": 20,
+    "Leiter Plattformstrategie": 20,
+    # GKV internal leadership roles – Einkauf, Vergabe & Sourcing
+    "Leiter Einkauf": 20,
+    "Head of Procurement": 20,
+    "Vergabemanagement": 18,
+    "Tender Manager": 18,
+    "Sourcing Manager": 18,
+    "Vendor Manager": 18,
+    "Dienstleistersteuerung": 18,
+    "Leiter Partnermanagement": 18,
+    # GKV internal leadership roles – Vertrieb & Markt
+    "Leiter Vertrieb": 20,
+    "Leiter Kundenmanagement": 20,
+    "Leiter Firmenkunden": 20,
+    "Leiter Bestandskunden": 18,
+    "Leiter Partnervertrieb": 20,
+    # GKV internal leadership roles – Produkt & Versorgung
+    "Leiter Digitale Produkte": 22,
+    "Head of Digital Products": 22,
+    "Leiter App": 18,
+    "Omnichannel": 15,
+    "Leiter Versorgungsprogramme": 20,
+    "Leiter Versorgungslösungen": 20,
+    "eHealth-Produkte": 18,
+    # GKV internal leadership roles – Vorstand & Stabsfunktionen
+    "Leiter Strategie": 20,
+    "Leiter Vorstandsstab": 20,
+    "Chief of Staff": 18,
+    "Referent Vorstand": 18,
     # Known companies in the ecosystem
     "adesso": 8,
     "CGI": 8,
