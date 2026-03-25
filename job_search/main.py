@@ -90,13 +90,29 @@ def main() -> None:
     new_jobs = [j for j in raw_jobs if j["id"] not in seen]
     logger.info("New (not seen before): %d", len(new_jobs))
 
+    # Per-source breakdown after dedup
+    from collections import Counter
+    src_new = Counter(j["source"] for j in new_jobs)
+    src_raw = Counter(j["source"] for j in raw_jobs)
+    for src in sorted(src_raw):
+        logger.info("  %-20s raw: %2d  new after dedup: %2d  (deduped: %d)",
+                    src, src_raw[src], src_new.get(src, 0),
+                    src_raw[src] - src_new.get(src, 0))
+
     # Step 1: keyword pre-filter (fast, no API cost)
     candidates: List[dict] = []
+    filtered_out: Counter = Counter()
     for job in new_jobs:
         s = score_job(job)
         if is_relevant(s):
             candidates.append({**job, "score": s})
+        else:
+            filtered_out[job["source"]] += 1
+            logger.debug("  BELOW SCORE (%2d): [%s] %s @ %s",
+                         s, job["source"], job["title"][:60], job["company"][:30])
     logger.info("Candidates after keyword filter: %d", len(candidates))
+    for src, cnt in sorted(filtered_out.items()):
+        logger.info("  %-20s filtered out by score: %d", src, cnt)
 
     # Step 2: AI re-scoring with full profile context (uses Claude API if key present)
     relevant = score_jobs_with_ai(candidates)
