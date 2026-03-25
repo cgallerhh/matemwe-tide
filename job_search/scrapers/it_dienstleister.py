@@ -46,6 +46,8 @@ IT_CAREER_PAGES: List[Tuple[str, str]] = [
     ("_fbeta GmbH",     "https://fbeta.de/karriere/"),
     # GKV SC GmbH: korrekte Domain www1.gkvsc.de
     ("GKV SC GmbH",     "https://www1.gkvsc.de/karriere/stellenangebote/"),
+    # opta data Gruppe: GKV-IT-Dienstleister
+    ("opta data Gruppe", "https://karriere.optadata.de/search"),
 ]
 
 _JOB_SUBPAGE_PATTERNS = [
