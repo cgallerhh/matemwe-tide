@@ -87,6 +87,57 @@ POSITIVE_KEYWORDS = {
     "Remote": 5,
     "Hybrid": 5,
     "Homeoffice": 5,
+    # GKV internal leadership roles – Digitalisierung & Transformation
+    "Chief Digital Officer": 22,
+    "CDO": 15,
+    "Leiter Digital": 22,        # covers Leiter Digitalisierung, Leiter Digitale *
+    "Bereichsleiter Digital": 22,
+    "Head of Digital": 22,
+    "Leiter E-Health": 22,
+    "Leiter eHealth": 22,
+    "Leiter Unternehmensentwicklung": 20,
+    "Leiter Innovation": 20,     # covers Leiter Innovation + Leiter Innovationsmanagement
+    "Head of Customer Experience": 20,
+    # GKV internal leadership roles – IT-Strategie & IT-Steuerung
+    "Leiter IT-Strategie": 22,
+    "Head of IT Strategy": 22,
+    "Leiter IT-Steuerung": 22,
+    "Head of IT Governance": 22,
+    "IT-Portfolio": 18,
+    "IT Portfolio": 18,
+    "IT-Programmleiter": 20,
+    "Demand Management IT": 18,
+    "Head of Cloud Transformation": 20,
+    "Leiter Anwendungsstrategie": 20,
+    "Leiter Plattformstrategie": 20,
+    # GKV internal leadership roles – Einkauf, Vergabe & Sourcing
+    "Leiter Einkauf": 20,        # covers Leiter Einkauf IT + Leiter Strategischer Einkauf
+    "Head of Procurement": 20,
+    "Vergabemanagement": 18,
+    "Tender Manager": 18,
+    "Sourcing Manager": 18,
+    "Vendor Manager": 18,
+    "Dienstleistersteuerung": 18,
+    "Leiter Partnermanagement": 18,
+    # GKV internal leadership roles – Vertrieb & Markt
+    "Leiter Vertrieb": 20,
+    "Leiter Kundenmanagement": 20,
+    "Leiter Firmenkunden": 20,
+    "Leiter Bestandskunden": 18,
+    "Leiter Partnervertrieb": 20,
+    # GKV internal leadership roles – Produkt & Versorgung
+    "Leiter Digitale Produkte": 22,
+    "Head of Digital Products": 22,
+    "Leiter App": 18,
+    "Omnichannel": 15,
+    "Leiter Versorgungsprogramme": 20,
+    "Leiter Versorgungslösungen": 20,
+    "eHealth-Produkte": 18,
+    # GKV internal leadership roles – Vorstand & Stabsfunktionen
+    "Leiter Strategie": 20,
+    "Leiter Vorstandsstab": 20,
+    "Chief of Staff": 18,
+    "Referent Vorstand": 18,
     # Known companies in the ecosystem
     "adesso": 8,
     "CGI": 8,
