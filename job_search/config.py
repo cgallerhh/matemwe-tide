@@ -50,6 +50,26 @@ GKV_QUERIES = [
 # Backwards-compat alias used by existing imports
 SEARCH_QUERIES = EXTERNAL_QUERIES
 
+# Queries für IT-Dienstleister-Karriereseiten (Titelfilter, kürzere Begriffe)
+# → breiter als EXTERNAL_QUERIES, da Stellentitel bei Dienstleistern selten "GKV" enthalten
+IT_DIENSTLEISTER_QUERIES = [
+    "Account Manager",
+    "Sales Manager",
+    "Key Account",
+    "Business Development",
+    "Vertrieb",
+    "Manager",
+    "Director",
+    "Head of",
+    "Consulting",
+    "Consultant",
+    "Healthcare",
+    "Gesundheit",
+    "eHealth",
+    "GKV",
+    "Public Sector",
+]
+
 # Keywords that BOOST relevance score (keyword → points)
 POSITIVE_KEYWORDS = {
     # Core domain – highest weight
