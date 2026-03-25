@@ -27,8 +27,8 @@ IT_CAREER_PAGES: List[Tuple[str, str]] = [
     # Tier 1 – GKV-Kerndienstleister
     # Arvato: JSON-LD auf der Karriereseite vorhanden
     ("Arvato Systems",  "https://www.arvato-systems.de/karriere"),
-    # BITMARCK: Root-Seite, nicht /stellenangebote (404)
-    ("BITMARCK",        "https://karriere.bitmarck.de/"),
+    # BITMARCK: Direkte Such-/Listenansicht
+    ("BITMARCK",        "https://karriere.bitmarck.de/search"),
     # ITSC: kleines Haus, einfaches HTML
     ("ITSC GmbH",       "https://www.itsc.de/karriere"),
     # msg: separater Job-Board auf jobs.msg.group (Hauptseite reagiert mit 406)
@@ -40,8 +40,12 @@ IT_CAREER_PAGES: List[Tuple[str, str]] = [
     ("Dataport",        "https://karriere.dataport.de"),
     # Sopra Steria: JSON-LD-Stellenseite
     ("Sopra Steria",    "https://careers.soprasteria.de/jobs"),
+    # Capgemini: gefilterte Jobs-Seite Deutschland
+    ("Capgemini",       "https://www.capgemini.com/de-de/karriere/jobs/?country_code=de-de&country_name=Germany&size=15"),
     # Tier 4 – Spezialisten & Mittelständler
     ("_fbeta GmbH",     "https://fbeta.de/karriere/"),
+    # GKV SC GmbH: korrekte Domain www1.gkvsc.de
+    ("GKV SC GmbH",     "https://www1.gkvsc.de/karriere/stellenangebote/"),
 ]
 
 _JOB_SUBPAGE_PATTERNS = [
